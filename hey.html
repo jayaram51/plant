@@ -1,0 +1,441 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Plant Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f7f2;
+      color: #20372a;
+    }
+    header {
+      background: #174b35;
+      color: white;
+      padding: 22px 5%;
+    }
+    header h1 { margin: 0 0 8px; }
+    header p { margin: 0; color: #d5e9dc; }
+    main { max-width: 1200px; margin: auto; padding: 24px; }
+    .panel, .card {
+      background: white;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 3px 14px #173e2510;
+      margin-bottom: 18px;
+    }
+    .login {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    input {
+      padding: 12px;
+      border: 1px solid #ccd8ce;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 180px;
+    }
+    button {
+      background: #21764a;
+      color: white;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+    button:hover { background: #165c37; }
+    button.secondary { background: #53685a; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .status { font-size: 14px; margin-top: 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card .label { color: #718075; font-size: 14px; }
+    .value { font-size: 32px; font-weight: bold; margin: 15px 0 8px; }
+    .note { color: #718075; font-size: 13px; }
+    .good { color: #21764a; }
+    .warning { color: #b45309; }
+    .error { color: #b91c1c; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    canvas { max-height: 340px; }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 450px) {
+      main { padding: 12px; }
+      .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .card { padding: 12px; }
+      .value { font-size: 25px; }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>🌱 Smart Plant Monitoring</h1>
+  <p>ESP32 · Firebase Realtime Database · Automatic Irrigation</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Firebase Login</h2>
+    <div class="login">
+      <input id="email" type="email"
+             placeholder="Firebase user email" autocomplete="username">
+      <input id="password" type="password"
+             placeholder="Firebase password"
+             autocomplete="current-password">
+      <button id="loginBtn">Sign In</button>
+      <button id="logoutBtn" class="secondary" hidden>Sign Out</button>
+    </div>
+    <div id="connection" class="status">
+      Not connected to Firebase yet.
+    </div>
+    <div id="lastUpdate" class="note"></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <div class="label">Soil Moisture</div>
+      <div class="value" id="soil">--</div>
+      <div class="note">Estimated moisture</div>
+    </div>
+    <div class="card">
+      <div class="label">Temperature</div>
+      <div class="value" id="temperature">--</div>
+      <div class="note">Degrees Celsius</div>
+    </div>
+    <div class="card">
+      <div class="label">Air Humidity</div>
+      <div class="value" id="humidity">--</div>
+      <div class="note">Relative humidity</div>
+    </div>
+    <div class="card">
+      <div class="label">Water Pump</div>
+      <div class="value" id="pump">--</div>
+      <div class="note">Reported relay state</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Database Tools</h2>
+    <div class="actions">
+      <button id="testBtn" disabled>Test Database Connection</button>
+      <button id="demoBtn" disabled>Insert Demo Data</button>
+      <button id="historyBtn" disabled>Refresh History</button>
+    </div>
+    <p class="note">
+      Demo data is artificial and is never a real sensor reading.
+      The demo button writes to /plant/latest and /plant/history.
+    </p>
+    <div id="testResult" class="status"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Sensor History</h2>
+    <canvas id="chart"></canvas>
+    <p id="historyInfo" class="note">Sign in to load historical records.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Latest Database Record</h2>
+    <pre id="rawData" style="white-space:pre-wrap;overflow-wrap:anywhere">No data loaded.</pre>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+  import {
+    getDatabase, ref, get, set, push, onValue
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+  import {
+    getAuth, signInWithEmailAndPassword, signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyChA-oxmAt5zTVv_XpsOXzmwcNRpKWUw1Y",
+    authDomain: "virushka-d2b72.firebaseapp.com",
+    databaseURL: "https://virushka-d2b72-default-rtdb.firebaseio.com/",
+    projectId: "virushka-d2b72",
+    storageBucket: "virushka-d2b72.firebasestorage.app",
+    messagingSenderId: "636226459349",
+    appId: "1:636226459349:web:57cc6a204d71ddad3c745c",
+    measurementId: "G-ZYXGF89YY6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  const $ = id => document.getElementById(id);
+
+  let currentUser = null;
+  let stopLatest = null;
+  let stopHistory = null;
+  let historyRecords = [];
+
+  const chart = new Chart($("chart"), {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: "Soil moisture (%)",
+          data: [],
+          borderColor: "#21764a",
+          backgroundColor: "#21764a20",
+          yAxisID: "y",
+          tension: 0.3
+        },
+        {
+          label: "Temperature (°C)",
+          data: [],
+          borderColor: "#d97757",
+          yAxisID: "y1",
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { intersect: false, mode: "index" },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: "Soil moisture (%)" }
+        },
+        y1: {
+          position: "right",
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: "Temperature (°C)" }
+        }
+      }
+    }
+  });
+
+  function status(message, type = "") {
+    $("connection").textContent = message;
+    $("connection").className = "status " + type;
+  }
+
+  function clearDashboard() {
+    $("soil").textContent = "--";
+    $("temperature").textContent = "--";
+    $("humidity").textContent = "--";
+    $("pump").textContent = "--";
+    $("rawData").textContent = "No data loaded.";
+    $("lastUpdate").textContent = "";
+    historyRecords = [];
+    chart.data.labels = [];
+    chart.data.datasets.forEach(d => d.data = []);
+    chart.update();
+    $("historyInfo").textContent = "No history loaded.";
+  }
+
+  function showLatest(data) {
+    if (!data) {
+      clearDashboard();
+      $("rawData").textContent =
+        "The /plant/latest path does not exist yet.";
+      return;
+    }
+
+    $("soil").textContent =
+      data.soil_moisture == null ? "--" :
+      Number(data.soil_moisture) + "%";
+
+    $("temperature").textContent =
+      data.temperature_c == null ? "--" :
+      Number(data.temperature_c).toFixed(1) + " °C";
+
+    $("humidity").textContent =
+      data.air_humidity == null ? "--" :
+      Number(data.air_humidity).toFixed(1) + "%";
+
+    $("pump").textContent =
+      typeof data.pump_on === "boolean" ?
+      (data.pump_on ? "ON" : "OFF") : "--";
+
+    $("rawData").textContent = JSON.stringify(data, null, 2);
+
+    if (data.timestamp) {
+      $("lastUpdate").textContent =
+        "Record time: " +
+        new Date(Number(data.timestamp) * 1000).toLocaleString();
+    } else if (data.uptime_ms != null) {
+      $("lastUpdate").textContent =
+        "Device uptime: " + data.uptime_ms + " ms (not a calendar time)";
+    } else {
+      $("lastUpdate").textContent = "Record has no timestamp.";
+    }
+  }
+
+  function showHistory(data) {
+    historyRecords = data ?
+      Object.entries(data).map(([id, record]) => ({ id, ...record })) : [];
+
+    historyRecords.sort((a, b) =>
+      Number(a.timestamp || a.uptime_ms || 0) -
+      Number(b.timestamp || b.uptime_ms || 0)
+    );
+
+    // Display the most recent 100 records
+    const rows = historyRecords.slice(-100);
+
+    chart.data.labels = rows.map((r, i) => {
+      if (r.timestamp) {
+        return new Date(Number(r.timestamp) * 1000)
+          .toLocaleTimeString();
+      }
+      return "Record " + (i + 1);
+    });
+
+    chart.data.datasets[0].data =
+      rows.map(r => r.soil_moisture ?? null);
+
+    chart.data.datasets[1].data =
+      rows.map(r => r.temperature_c ?? null);
+
+    chart.update();
+
+    $("historyInfo").textContent =
+      rows.length + " records displayed from /plant/history.";
+  }
+
+  async function testDatabase() {
+    if (!currentUser) return;
+
+    $("testResult").textContent = "Testing database read access...";
+    try {
+      const snapshot = await get(ref(db, "/plant/latest"));
+      $("testResult").textContent = snapshot.exists()
+        ? "SUCCESS: Firebase read works. Latest record exists."
+        : "SUCCESS: Firebase is reachable, but /plant/latest is empty.";
+      $("testResult").className = "status good";
+    } catch (error) {
+      $("testResult").textContent =
+        "FAILED: " + error.code + " — " + error.message;
+      $("testResult").className = "status error";
+    }
+  }
+
+  async function insertDemo() {
+    if (!currentUser) return;
+
+    const now = Math.floor(Date.now() / 1000);
+    const demo = {
+      soil_moisture: Math.floor(25 + Math.random() * 50),
+      soil_raw: 0,
+      temperature_c: Number((24 + Math.random() * 10).toFixed(1)),
+      air_humidity: Number((40 + Math.random() * 40).toFixed(1)),
+      pump_on: false,
+      timestamp: now,
+      demo: true
+    };
+
+    // Mark as demo so the website never mistakes it for actual sensor data.
+    demo.soil_raw = Math.round(
+      3000 - demo.soil_moisture * 17
+    );
+
+    try {
+      await set(ref(db, "/plant/latest"), demo);
+      await push(ref(db, "/plant/history"), demo);
+      $("testResult").textContent =
+        "Demo record inserted. These are simulated values, not sensor readings.";
+      $("testResult").className = "status warning";
+    } catch (error) {
+      $("testResult").textContent =
+        "Demo write failed: " + error.code + " — " + error.message;
+      $("testResult").className = "status error";
+    }
+  }
+
+  function subscribe() {
+    if (stopLatest) stopLatest();
+    if (stopHistory) stopHistory();
+
+    stopLatest = onValue(ref(db, "/plant/latest"), snapshot => {
+      showLatest(snapshot.val());
+    }, error => {
+      status("Latest read failed: " + error.message, "error");
+    });
+
+    stopHistory = onValue(ref(db, "/plant/history"), snapshot => {
+      showHistory(snapshot.val());
+    }, error => {
+      $("historyInfo").textContent =
+        "History read failed: " + error.message;
+    });
+  }
+
+  $("loginBtn").addEventListener("click", async () => {
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        $("email").value.trim(),
+        $("password").value
+      );
+    } catch (error) {
+      status("Login failed: " + error.code + " — " + error.message, "error");
+    }
+  });
+
+  $("logoutBtn").addEventListener("click", () => signOut(auth));
+
+  $("testBtn").addEventListener("click", testDatabase);
+  $("demoBtn").addEventListener("click", insertDemo);
+
+  $("historyBtn").addEventListener("click", async () => {
+    if (!currentUser) return;
+    try {
+      const snapshot = await get(ref(db, "/plant/history"));
+      showHistory(snapshot.val());
+    } catch (error) {
+      $("historyInfo").textContent =
+        "History read failed: " + error.message;
+    }
+  });
+
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+
+    $("loginBtn").hidden = !!user;
+    $("logoutBtn").hidden = !user;
+    $("email").hidden = !!user;
+    $("password").hidden = !!user;
+
+    ["testBtn", "demoBtn", "historyBtn"].forEach(id => {
+      $(id).disabled = !user;
+    });
+
+    if (user) {
+      status("Signed in. Connecting to Realtime Database...", "good");
+      subscribe();
+    } else {
+      if (stopLatest) stopLatest();
+      if (stopHistory) stopHistory();
+      stopLatest = stopHistory = null;
+      clearDashboard();
+      status("Sign in to connect to Firebase.");
+    }
+  });
+</script>
+</body>
+</html>

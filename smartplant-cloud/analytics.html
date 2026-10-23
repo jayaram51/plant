@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Analytics — SmartPlant Cloud</title>
+    <meta name="description" content="In-depth analytics, distributions, and trends for plant soil moisture, temperature, and humidity.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Chart.js & Date Adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Custom Styles -->
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--card-radius);
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 24px;
+        }
+        .stat-badge-box {
+            background: var(--color-bg-alt);
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <div class="main-wrapper">
+            <header class="topnav" id="topnav"></header>
+
+            <main class="page-content">
+                <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+                    <div>
+                        <h1 class="h4 mb-1 fw-bold">Sensor Analytics &amp; Deep Trends</h1>
+                        <p class="text-secondary small mb-0">Detailed statistical aggregation across soil moisture, ambient heat, and transpiration</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="sp-btn sp-btn-secondary sp-btn-sm" onclick="window.location.reload()">
+                            <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Aggregate Stats Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="stat-badge-box">
+                            <div class="stat-label">Moisture Mean</div>
+                            <div class="stat-value text-success" id="stat-moist-avg">54.2%</div>
+                            <small class="text-muted">Target: 40-70%</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-badge-box">
+                            <div class="stat-label">Moisture Variance</div>
+                            <div class="stat-value text-primary" id="stat-moist-std">± 6.8%</div>
+                            <small class="text-muted">Stable moisture</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-badge-box">
+                            <div class="stat-label">Peak Temperature</div>
+                            <div class="stat-value text-danger" id="stat-temp-max">31.4°C</div>
+                            <small class="text-muted">Safe threshold: &lt; 38°C</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-badge-box">
+                            <div class="stat-label">Irrigation Cycles</div>
+                            <div class="stat-value text-info" id="stat-cycles-count">14 runs</div>
+                            <small class="text-muted">Total: 420 ml pumped</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Analytics Graphs -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-8">
+                        <div class="chart-card">
+                            <h3 class="h6 fw-bold mb-3"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>24-Hour Trend &amp; Moving Average</h3>
+                            <div style="height: 320px;">
+                                <canvas id="chart-analytics-trends"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="chart-card">
+                            <h3 class="h6 fw-bold mb-3"><i class="bi bi-pie-chart-fill me-2 text-success"></i>Soil Moisture Health Bands</h3>
+                            <div style="height: 320px;">
+                                <canvas id="chart-analytics-bands"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correlation Scatter Plot -->
+                <div class="chart-card">
+                    <h3 class="h6 fw-bold mb-3"><i class="bi bi-scatter me-2 text-warning"></i>Temperature vs. Moisture Depletion Correlation</h3>
+                    <div style="height: 280px;">
+                        <canvas id="chart-analytics-correlation"></canvas>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChA-oxmAt5zTVv_XpsOXzmwcNRpKWUw1Y",
+            authDomain: "virushka-d2b72.firebaseapp.com",
+            databaseURL: "https://virushka-d2b72-default-rtdb.firebaseio.com/",
+            projectId: "virushka-d2b72",
+            storageBucket: "virushka-d2b72.firebasestorage.app",
+            messagingSenderId: "636226459349",
+            appId: "1:636226459349:web:57cc6a204d71ddad3c745c",
+            measurementId: "G-ZYXGF89YY6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Sidebar & Topnav
+        renderSidebar();
+        renderTopnav();
+
+        function renderSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const userEmail = sessionStorage.getItem('sp_user_email') || 'user@smartplant.cloud';
+            const userName = sessionStorage.getItem('sp_user_name') || userEmail.split('@')[0];
+            const initials = userName.substring(0, 2).toUpperCase();
+
+            sidebar.innerHTML = `
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon"><i class="bi bi-flower2"></i></div>
+                    <div class="sidebar-brand-text">
+                        <span class="brand-name">SmartPlant</span>
+                        <span class="brand-tagline">Cloud Platform</span>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <span class="sidebar-section-label">Main Menu</span>
+                    <a href="dashboard.html" class="sidebar-item"><i class="bi bi-grid-1x2"></i><span class="item-label">Dashboard</span></a>
+                    <a href="analytics.html" class="sidebar-item active"><i class="bi bi-graph-up"></i><span class="item-label">Sensor Analytics</span></a>
+                    <a href="irrigation.html" class="sidebar-item"><i class="bi bi-droplet-half"></i><span class="item-label">Irrigation History</span></a>
+                    <a href="devices.html" class="sidebar-item"><i class="bi bi-cpu"></i><span class="item-label">Plants &amp; Devices</span></a>
+                    <a href="reports.html" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i><span class="item-label">Reports &amp; Export</span></a>
+                    <span class="sidebar-section-label" style="margin-top: 12px;">System</span>
+                    <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i><span class="item-label">Settings</span></a>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-avatar">${initials}</div>
+                        <div class="sidebar-user-info">
+                            <div class="sidebar-user-name">${userName}</div>
+                            <div class="sidebar-user-email">${userEmail}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTopnav() {
+            const topnav = document.getElementById('topnav');
+            const theme = localStorage.getItem('sp_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+
+            topnav.innerHTML = `
+                <div class="topnav-left">
+                    <button class="topnav-hamburger d-md-none" id="mobile-toggle-btn"><i class="bi bi-list"></i></button>
+                    <div>
+                        <div class="topnav-title">Sensor Analytics</div>
+                        <div class="topnav-breadcrumbs">
+                            <a href="dashboard.html">Home</a>
+                            <span class="separator"><i class="bi bi-chevron-right"></i></span>
+                            <span class="current">Analytics</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="topnav-right">
+                    <button class="topnav-btn" id="theme-btn" title="Toggle Theme"><i class="bi ${theme === 'dark' ? 'bi-sun' : 'bi-moon'}"></i></button>
+                    <button class="topnav-btn" id="logout-btn" title="Sign Out"><i class="bi bi-box-arrow-right"></i></button>
+                </div>
+            `;
+
+            document.getElementById('theme-btn').addEventListener('click', () => {
+                const next = (document.documentElement.getAttribute('data-theme') || 'light') === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('sp_theme', next);
+                renderTopnav();
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try { await signOut(auth); } catch (e) {}
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Charts
+        const hours = ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'];
+        new Chart(document.getElementById('chart-analytics-trends').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [
+                    { label: 'Soil Moisture (%)', data: [58,56,54,52,50,47,65,62,59,57,55,53], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.35 },
+                    { label: 'Moving Avg', data: [55,55,55,54,53,53,55,56,56,56,56,55], borderColor: '#059669', borderDash: [5, 5], fill: false, tension: 0.2 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        new Chart(document.getElementById('chart-analytics-bands').getContext('2d'), {
+            type: 'polarArea',
+            data: {
+                labels: ['Optimal Moisture', 'Moderate Dry', 'High Moisture', 'Critical Deficit'],
+                datasets: [{ data: [65, 18, 12, 5], backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('chart-analytics-correlation').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [
+                    { label: 'Ambient Temperature (°C)', data: [22,21,20,21,24,28,31,30,28,26,24,23], borderColor: '#ef4444', tension: 0.4, yAxisID: 'y' },
+                    { label: 'Soil Moisture Depletion Rate (%/hr)', data: [0.2,0.1,0.1,0.3,0.8,1.4,1.8,1.6,1.1,0.6,0.3,0.2], borderColor: '#f59e0b', tension: 0.4, yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', position: 'left', title: { display: true, text: '°C' } },
+                    y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '%/hr' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

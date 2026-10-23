@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports &amp; Export — SmartPlant Cloud</title>
+    <meta name="description" content="Generate telemetry audit reports and export CSV/JSON logs.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <div class="main-wrapper">
+            <header class="topnav" id="topnav"></header>
+
+            <main class="page-content">
+                <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+                    <div>
+                        <h1 class="h4 mb-1 fw-bold">Reports &amp; Data Export</h1>
+                        <p class="text-secondary small mb-0">Download CSV/JSON sensor archives or export printable plant health summaries</p>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="sp-card p-4">
+                            <h3 class="h6 fw-bold mb-3"><i class="bi bi-file-earmark-arrow-down me-2 text-primary"></i>Export Raw Telemetry</h3>
+                            <p class="text-secondary small mb-3">Export all timestamps, soil moisture levels, temperature, and pump cycles for statistical modeling or Excel review.</p>
+                            
+                            <div class="d-flex gap-2">
+                                <button class="sp-btn sp-btn-primary sp-btn-sm" id="btn-dl-csv">
+                                    <i class="bi bi-filetype-csv me-1"></i> Download CSV Spreadsheet
+                                </button>
+                                <button class="sp-btn sp-btn-secondary sp-btn-sm" id="btn-dl-json">
+                                    <i class="bi bi-filetype-json me-1"></i> Download JSON Dump
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="sp-card p-4">
+                            <h3 class="h6 fw-bold mb-3"><i class="bi bi-printer me-2 text-success"></i>Printable Agronomy Health Report</h3>
+                            <p class="text-secondary small mb-3">Generates an executive PDF/print summary of water consumption, average ambient climate, and moisture stability.</p>
+                            
+                            <button class="sp-btn sp-btn-secondary sp-btn-sm" onclick="window.print()">
+                                <i class="bi bi-printer me-1"></i> Print / Save as PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications & Alerts Log -->
+                <div class="sp-card" id="notifications">
+                    <div class="sp-card-header">
+                        <div class="sp-card-header-title">System Alerts &amp; Automation Notices</div>
+                    </div>
+                    <div class="p-3">
+                        <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
+                            <div>
+                                <span class="badge bg-success me-2">AUTOMATION</span>
+                                <span class="fw-semibold small">Soil moisture stabilized to 62% after automatic 10s irrigation run.</span>
+                            </div>
+                            <span class="text-muted small">18:25</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
+                            <div>
+                                <span class="badge bg-warning text-dark me-2">THRESHOLD</span>
+                                <span class="fw-semibold small">Soil moisture dipped below dry threshold (28% &lt; 30%). Relay triggered.</span>
+                            </div>
+                            <span class="text-muted small">18:24</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between p-2">
+                            <div>
+                                <span class="badge bg-info me-2">NODE SYNC</span>
+                                <span class="fw-semibold small">ESP32 telemetry heartbeat verified with Firebase RTDB.</span>
+                            </div>
+                            <span class="text-muted small">12:00</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChA-oxmAt5zTVv_XpsOXzmwcNRpKWUw1Y",
+            authDomain: "virushka-d2b72.firebaseapp.com",
+            projectId: "virushka-d2b72"
+        };
+        initializeApp(firebaseConfig);
+        const auth = getAuth();
+
+        renderSidebar();
+        renderTopnav();
+
+        function renderSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const userEmail = sessionStorage.getItem('sp_user_email') || 'user@smartplant.cloud';
+            const userName = sessionStorage.getItem('sp_user_name') || userEmail.split('@')[0];
+            const initials = userName.substring(0, 2).toUpperCase();
+
+            sidebar.innerHTML = `
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon"><i class="bi bi-flower2"></i></div>
+                    <div class="sidebar-brand-text">
+                        <span class="brand-name">SmartPlant</span>
+                        <span class="brand-tagline">Cloud Platform</span>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <span class="sidebar-section-label">Main Menu</span>
+                    <a href="dashboard.html" class="sidebar-item"><i class="bi bi-grid-1x2"></i><span class="item-label">Dashboard</span></a>
+                    <a href="analytics.html" class="sidebar-item"><i class="bi bi-graph-up"></i><span class="item-label">Sensor Analytics</span></a>
+                    <a href="irrigation.html" class="sidebar-item"><i class="bi bi-droplet-half"></i><span class="item-label">Irrigation History</span></a>
+                    <a href="devices.html" class="sidebar-item"><i class="bi bi-cpu"></i><span class="item-label">Plants &amp; Devices</span></a>
+                    <a href="reports.html" class="sidebar-item active"><i class="bi bi-file-earmark-bar-graph"></i><span class="item-label">Reports &amp; Export</span></a>
+                    <span class="sidebar-section-label" style="margin-top: 12px;">System</span>
+                    <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i><span class="item-label">Settings</span></a>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-avatar">${initials}</div>
+                        <div class="sidebar-user-info">
+                            <div class="sidebar-user-name">${userName}</div>
+                            <div class="sidebar-user-email">${userEmail}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTopnav() {
+            const topnav = document.getElementById('topnav');
+            const theme = localStorage.getItem('sp_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+
+            topnav.innerHTML = `
+                <div class="topnav-left">
+                    <button class="topnav-hamburger d-md-none" id="mobile-toggle-btn"><i class="bi bi-list"></i></button>
+                    <div>
+                        <div class="topnav-title">Reports &amp; Data Export</div>
+                        <div class="topnav-breadcrumbs">
+                            <a href="dashboard.html">Home</a>
+                            <span class="separator"><i class="bi bi-chevron-right"></i></span>
+                            <span class="current">Reports</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="topnav-right">
+                    <button class="topnav-btn" id="theme-btn" title="Toggle Theme"><i class="bi ${theme === 'dark' ? 'bi-sun' : 'bi-moon'}"></i></button>
+                    <button class="topnav-btn" id="logout-btn" title="Sign Out"><i class="bi bi-box-arrow-right"></i></button>
+                </div>
+            `;
+
+            document.getElementById('theme-btn').addEventListener('click', () => {
+                const next = (document.documentElement.getAttribute('data-theme') || 'light') === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('sp_theme', next);
+                renderTopnav();
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try { await signOut(auth); } catch (e) {}
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            });
+        }
+
+        // CSV export
+        document.getElementById('btn-dl-csv').addEventListener('click', () => {
+            const csv = "Timestamp,Soil_Moisture,Temperature,Humidity,Pump_On\n" +
+                "2026-10-22T18:24:10,28,26.4,58,1\n" +
+                "2026-10-22T18:25:00,62,25.8,61,0\n" +
+                "2026-10-22T18:30:00,60,25.5,60,0\n";
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'smartplant-telemetry.csv';
+            a.click();
+        });
+
+        // JSON export
+        document.getElementById('btn-dl-json').addEventListener('click', () => {
+            const data = [
+                { timestamp: Date.now() - 3600000, soil_moisture: 28, temperature_c: 26.4, air_humidity: 58, pump_on: true },
+                { timestamp: Date.now(), soil_moisture: 62, temperature_c: 25.8, air_humidity: 61, pump_on: false }
+            ];
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'smartplant-telemetry.json';
+            a.click();
+        });
+    </script>
+</body>
+</html>

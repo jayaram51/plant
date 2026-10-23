@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartPlant Cloud — Live Device Dashboard &amp; App</title>
+    <meta name="description" content="Real-time ESP32 IoT sensor telemetry connected directly to Firebase Realtime Database. Installable Progressive Web App.">
+
+    <!-- PWA Meta Tags & Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#059669">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SmartPlant">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Custom Styles -->
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(226, 232, 240, 0.8);
+            --glass-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.08);
+        }
+        [data-theme="dark"] {
+            --glass-bg: rgba(26, 35, 50, 0.85);
+            --glass-border: rgba(45, 58, 74, 0.8);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .quick-action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            padding: 14px 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+        .status-dot-pulse {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--card-radius);
+            padding: 22px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .chart-card:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .chart-container-box {
+            position: relative;
+            height: 290px;
+            width: 100%;
+        }
+
+        /* Health Score Card */
+        .health-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.02));
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: var(--card-radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .health-score-circle {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            border: 4px solid #10b981;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #10b981;
+            background: var(--card-bg);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+            flex-shrink: 0;
+        }
+
+        /* PWA Install Promo Bar */
+        .pwa-banner {
+            background: linear-gradient(90deg, #065f46, #059669);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.25);
+            animation: fadeInDown 0.4s ease;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-install-app {
+            background: white;
+            color: #065f46;
+            font-weight: 700;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-install-app:hover {
+            background: #f0fdf4;
+            transform: scale(1.03);
+        }
+
+        /* Water Level Cylinder Animation */
+        .moisture-tank {
+            width: 100%;
+            height: 10px;
+            background: rgba(226, 232, 240, 0.6);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .moisture-level {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 6px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Pump Active Pulse Glow */
+        .pump-active-glow {
+            animation: pumpGlow 1.5s infinite alternate;
+        }
+        @keyframes pumpGlow {
+            from { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            to { box-shadow: 0 0 18px 4px rgba(16, 185, 129, 0.7); }
+        }
+
+        .raw-preview {
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 14px;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <div class="main-wrapper">
+            <!-- Top Nav -->
+            <header class="topnav" id="topnav"></header>
+
+            <!-- Page Content -->
+            <main class="page-content">
+                <!-- PWA Install Prompt Banner (Appears when installable) -->
+                <div id="pwa-install-banner" class="pwa-banner" style="display: none;">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="icons/icon-192.png" width="36" height="36" style="border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" alt="App Icon">
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.875rem;">Install SmartPlant Cloud as a Desktop / Mobile App</div>
+                            <div style="font-size: 0.75rem; opacity: 0.9;">One-click launch from taskbar/desktop with standalone window, offline caching, and instant alerts.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-install-app" id="btn-trigger-install">
+                            <i class="bi bi-box-arrow-in-down"></i>
+                            <span>Install App</span>
+                        </button>
+                        <button type="button" class="btn-close btn-close-white btn-sm" id="btn-dismiss-install" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <!-- Hardware Node Status & Live Controls -->
+                <div class="quick-action-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot-pulse" id="node-pulse-dot"></span>
+                            <span class="fw-bold" id="device-title">ESP32 Device Node</span>
+                            <span class="sp-badge sp-badge-success" id="connection-badge">Connected</span>
+                        </div>
+                        <span class="text-secondary small d-none d-md-inline">|</span>
+                        <div class="text-secondary small d-none d-md-flex align-items-center gap-2">
+                            <span><i class="bi bi-clock me-1"></i>Last reading: <strong id="last-updated-text">Listening for telemetry...</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- PWA Quick Install Icon (always available in header) -->
+                        <button type="button" class="sp-btn sp-btn-secondary sp-btn-sm d-none" id="header-install-btn" title="Install Web App">
+                            <i class="bi bi-download text-success me-1"></i>
+                            <span>Install App</span>
+                        </button>
+
+                        <!-- Real Water Pump Relay Toggle -->
+                        <button type="button" class="sp-btn sp-btn-primary sp-btn-sm" id="btn-toggle-pump">
+                            <i class="bi bi-droplet-fill me-1"></i>
+                            <span id="pump-btn-label">Turn Pump Relay ON</span>
+                        </button>
+
+                        <!-- Test Database Read -->
+                        <button type="button" class="sp-btn sp-btn-secondary sp-btn-sm" id="btn-test-db" title="Verify Firebase Read">
+                            <i class="bi bi-hdd-network me-1"></i>
+                            <span>Test Firebase</span>
+                        </button>
+
+                        <!-- Refresh -->
+                        <button type="button" class="sp-btn sp-btn-secondary sp-btn-sm" id="btn-refresh-data" title="Refresh Live Listeners">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Plant Health Index Overview Row -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-8">
+                        <div class="health-card d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="health-score-circle" id="health-score-circle">
+                                    <span id="health-score-val">--</span>
+                                    <span style="font-size: 0.55rem; font-weight: 500; text-transform: uppercase;">Score</span>
+                                </div>
+                                <div>
+                                    <h3 class="h5 mb-1 fw-bold" id="health-status-heading">Plant Health Index</h3>
+                                    <p class="text-secondary small mb-1" id="health-status-desc">Computed continuously from live soil moisture, transpiration, and ambient temperature.</p>
+                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                        <span class="sp-badge sp-badge-success" id="health-badge">Awaiting Readings</span>
+                                        <span class="text-muted small" id="vpd-index-tag"><i class="bi bi-wind me-1"></i>VPD: Calculating...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-end d-none d-sm-block">
+                                <span class="badge bg-light text-dark border p-2">
+                                    <i class="bi bi-cpu me-1 text-primary"></i> ESP32 Active Node
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="sp-card p-3 h-100 d-flex flex-column justify-content-center">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold text-secondary">Soil Hydration Level</span>
+                                <span class="small fw-bold text-primary" id="tank-percent-label">--%</span>
+                            </div>
+                            <div class="moisture-tank mb-2">
+                                <div class="moisture-level" id="moisture-tank-level"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted" style="font-size: 0.6875rem;">
+                                <span>Wilting &lt; 30%</span>
+                                <span>Optimal: 40-70%</span>
+                                <span>Saturated &gt; 75%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Real Device KPI Cards -->
+                <div class="kpi-grid">
+                    <!-- Soil Moisture Card -->
+                    <div class="kpi-card" data-kpi="moisture">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Soil Moisture</span>
+                            <div class="kpi-icon moisture">
+                                <i class="bi bi-moisture"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="val-moisture">--<span class="kpi-unit">%</span></div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="kpi-status status-info" id="status-moisture">Waiting for ESP32</span>
+                            <div class="kpi-trend" id="trend-moisture">
+                                <span class="text-secondary small">Real Sensor</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted mt-3" style="font-size: 0.6875rem;">
+                            <span>Dry Cutoff: &lt; 35%</span>
+                            <span id="soil-raw-label">ADC: --</span>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Card -->
+                    <div class="kpi-card" data-kpi="temperature">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Ambient Temperature</span>
+                            <div class="kpi-icon temperature">
+                                <i class="bi bi-thermometer-half"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="val-temperature">--<span class="kpi-unit">°C</span></div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="kpi-status status-info" id="status-temperature">Waiting for ESP32</span>
+                            <div class="kpi-trend" id="trend-temperature">
+                                <span class="text-secondary small">DHT11 Sensor</span>
+                            </div>
+                        </div>
+                        <div class="kpi-subtext text-muted mt-3" style="font-size: 0.6875rem;" id="temp-subtext">Min: -- · Max: -- · Avg: --</div>
+                    </div>
+
+                    <!-- Air Humidity Card -->
+                    <div class="kpi-card" data-kpi="humidity">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Relative Humidity</span>
+                            <div class="kpi-icon humidity">
+                                <i class="bi bi-cloud-haze2"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="val-humidity">--<span class="kpi-unit">%</span></div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="kpi-status status-info" id="status-humidity">Waiting for ESP32</span>
+                            <div class="kpi-trend" id="trend-humidity">
+                                <span class="text-secondary small">DHT11 Sensor</span>
+                            </div>
+                        </div>
+                        <div class="text-muted mt-3" style="font-size: 0.6875rem;">
+                            Comfort band: 40% – 70% RH
+                        </div>
+                    </div>
+
+                    <!-- Water Pump Relay Card -->
+                    <div class="kpi-card" data-kpi="pump" id="pump-card-container">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Water Pump (Relay)</span>
+                            <div class="kpi-icon pump">
+                                <i class="bi bi-droplet-half"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="val-pump">
+                            <span class="sp-badge sp-badge-neutral" id="pump-state-badge" style="font-size: 1.1rem; padding: 6px 14px;">--</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-3">
+                            <span class="small text-secondary" id="pump-subtext">GPIO26 Relay State</span>
+                            <span class="sp-badge sp-badge-info" id="pump-pin-label">Active LOW</span>
+                        </div>
+                        <div class="text-muted mt-3" style="font-size: 0.6875rem;" id="pump-records-count">
+                            Total historical activations: 0
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-7">
+                        <div class="chart-card h-100">
+                            <div class="chart-header">
+                                <div>
+                                    <h3 class="h6 mb-1 fw-bold"><i class="bi bi-moisture me-2 text-primary"></i>Live Soil Moisture Curve</h3>
+                                    <div class="text-secondary small">Real ESP32 readings streamed live from <code>/plant/history</code></div>
+                                </div>
+                            </div>
+                            <div class="chart-container-box">
+                                <canvas id="dashboard-moisture-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="chart-card h-100">
+                            <div class="chart-header">
+                                <div>
+                                    <h3 class="h6 mb-1 fw-bold"><i class="bi bi-thermometer-sun me-2 text-danger"></i>Temperature &amp; Humidity Dual Axis</h3>
+                                    <div class="text-secondary small">Microclimate synchronization</div>
+                                </div>
+                            </div>
+                            <div class="chart-container-box">
+                                <canvas id="dashboard-temp-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real Telemetry Table & Raw JSON Payload Inspector -->
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="sp-card">
+                            <div class="sp-card-header">
+                                <div>
+                                    <div class="sp-card-header-title">Actual Device Readings (/plant/history)</div>
+                                    <div class="sp-card-header-subtitle">Chronological telemetry streamed live from your Firebase Realtime Database</div>
+                                </div>
+                                <button class="sp-btn sp-btn-secondary sp-btn-sm" id="btn-export-csv">
+                                    <i class="bi bi-download me-1"></i> Export CSV
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" style="font-size: 0.8125rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>Soil Moisture</th>
+                                            <th>Temperature</th>
+                                            <th>Humidity</th>
+                                            <th>Pump Relay</th>
+                                            <th>Raw ADC</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent-readings-tbody">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-secondary" id="table-waiting-msg">
+                                                <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+                                                Waiting for ESP32 to upload to <code>/plant/history</code>...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="sp-card h-100">
+                            <div class="sp-card-header">
+                                <div>
+                                    <div class="sp-card-header-title">Live Payload Inspector (/plant/latest)</div>
+                                    <div class="sp-card-header-subtitle">Direct payload stream from Firebase</div>
+                                </div>
+                            </div>
+                            <div class="sp-card-body">
+                                <pre class="raw-preview" id="raw-data-preview">Connecting to Firebase Realtime Database...</pre>
+                                
+                                <div class="mt-3 p-3 bg-light rounded" style="font-size: 0.75rem;">
+                                    <div class="fw-bold mb-1 text-success"><i class="bi bi-check-circle-fill me-1"></i>Firebase Configuration Verified:</div>
+                                    <div class="text-muted">• Project: <code>virushka-d2b72</code></div>
+                                    <div class="text-muted">• Auth: <code>jayaram93915@gmail.com</code></div>
+                                    <div class="text-muted">• Realtime Path: <code>/plant/latest</code></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 200;"></div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- PWA Installation Registration Script -->
+    <script>
+        let deferredPrompt = null;
+
+        // Register Progressive Web App Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA ServiceWorker registered successfully:', reg.scope))
+                    .catch(err => console.log('ServiceWorker registration error:', err));
+            });
+        }
+
+        // Capture PWA Install Prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show PWA install banner and header button
+            const banner = document.getElementById('pwa-install-banner');
+            const headerBtn = document.getElementById('header-install-btn');
+            if (banner) banner.style.display = 'flex';
+            if (headerBtn) headerBtn.classList.remove('d-none');
+        });
+
+        // Trigger Install when user clicks install button
+        function triggerPWAInstall() {
+            if (!deferredPrompt) {
+                alert('To install SmartPlant Cloud:\n\n• On Chrome/Edge: Click the install icon in the URL bar (top right)\n• On iPhone/iPad: Tap Share -> "Add to Home Screen"\n• On Android: Tap Menu (3 dots) -> "Install App"');
+                return;
+            }
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User installed the SmartPlant PWA');
+                    document.getElementById('pwa-install-banner').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        document.getElementById('btn-trigger-install').addEventListener('click', triggerPWAInstall);
+        document.getElementById('header-install-btn').addEventListener('click', triggerPWAInstall);
+
+        document.getElementById('btn-dismiss-install').addEventListener('click', () => {
+            document.getElementById('pwa-install-banner').style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('SmartPlant Cloud app installed successfully!');
+            document.getElementById('pwa-install-banner').style.display = 'none';
+        });
+    </script>
+
+    <!-- Real Firebase Device Integration Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // User's Real Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyChA-oxmAt5zTVv_XpsOXzmwcNRpKWUw1Y",
+            authDomain: "virushka-d2b72.firebaseapp.com",
+            databaseURL: "https://virushka-d2b72-default-rtdb.firebaseio.com",
+            projectId: "virushka-d2b72",
+            storageBucket: "virushka-d2b72.firebasestorage.app",
+            messagingSenderId: "636226459349",
+            appId: "1:636226459349:web:57cc6a204d71ddad3c745c",
+            measurementId: "G-ZYXGF89YY6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // State — Real device data only
+        let currentUser = null;
+        let isPumpOn = false;
+        let latestData = null;
+        let historyData = [];
+        let moistureChart = null;
+        let tempChart = null;
+
+        // UI Setup
+        initTheme();
+        renderSidebar();
+        renderTopnav();
+        initCharts();
+
+        // Ensure user is signed in with their real account
+        ensureUserAuth();
+
+        async function ensureUserAuth() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    sessionStorage.setItem('sp_user_email', user.email || 'jayaram93915@gmail.com');
+                    sessionStorage.setItem('sp_user_name', 'Jayaram');
+                    renderSidebar();
+                    renderTopnav();
+                    startDeviceTelemetryListeners();
+                } else {
+                    try {
+                        const cred = await signInWithEmailAndPassword(auth, "jayaram93915@gmail.com", "Abc&1234");
+                        currentUser = cred.user;
+                        sessionStorage.setItem('sp_user_email', cred.user.email);
+                        sessionStorage.setItem('sp_user_name', 'Jayaram');
+                        renderSidebar();
+                        renderTopnav();
+                        startDeviceTelemetryListeners();
+                    } catch (err) {
+                        console.error("Auto sign-in error:", err);
+                        startDeviceTelemetryListeners();
+                    }
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // Listen to Real ESP32 Data from Firebase RTDB
+        // -------------------------------------------------------------
+        function startDeviceTelemetryListeners() {
+            // Connection monitor
+            onValue(ref(db, '.info/connected'), (snap) => {
+                const connected = snap.val() === true;
+                updateConnectionStatus(connected);
+            });
+
+            // 1. Listen to /plant/latest (Real-time single latest reading from ESP32)
+            const latestRef = ref(db, '/plant/latest');
+            onValue(latestRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && typeof data === 'object') {
+                    handleRealDeviceReading(data);
+                } else {
+                    document.getElementById('raw-data-preview').textContent = "Path '/plant/latest' is currently empty.\n\nWaiting for ESP32 to publish sensor data...";
+                    updatePumpDisplay(false);
+                }
+            }, (error) => {
+                console.error("Error reading /plant/latest:", error);
+                document.getElementById('raw-data-preview').textContent = "Error reading /plant/latest: " + error.message;
+            });
+
+            // 2. Listen to /plant/history (Real-time telemetry log from ESP32)
+            const historyRef = ref(db, '/plant/history');
+            onValue(historyRef, (snapshot) => {
+                const raw = snapshot.val();
+                if (raw) {
+                    processRealHistoryData(raw);
+                } else {
+                    document.getElementById('table-waiting-msg').textContent = "No records yet in /plant/history. Records will appear here as the ESP32 logs them.";
+                }
+            }, (error) => {
+                console.error("Error reading /plant/history:", error);
+            });
+
+            // 3. Fallback root listener in case ESP32 wrote directly to root
+            const rootRef = ref(db, '/');
+            onValue(rootRef, (snapshot) => {
+                const rootData = snapshot.val();
+                if (rootData && typeof rootData === 'object' && !latestData) {
+                    if (rootData.soil_moisture != null || rootData.temperature != null || rootData.humidity != null) {
+                        handleRealDeviceReading(rootData);
+                    }
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // Display Real Sensor Telemetry
+        // -------------------------------------------------------------
+        function handleRealDeviceReading(data) {
+            latestData = data;
+            isPumpOn = !!data.pump_on;
+
+            // Soil Moisture
+            const moisture = data.soil_moisture != null ? Math.round(data.soil_moisture) : (data.moisture != null ? Math.round(data.moisture) : null);
+            if (moisture !== null) {
+                document.getElementById('val-moisture').innerHTML = `${moisture}<span class="kpi-unit">%</span>`;
+                document.getElementById('tank-percent-label').textContent = `${moisture}%`;
+                document.getElementById('moisture-tank-level').style.width = `${Math.min(100, Math.max(0, moisture))}%`;
+
+                const statusMoist = document.getElementById('status-moisture');
+                if (moisture < 35) {
+                    statusMoist.className = 'kpi-status status-danger';
+                    statusMoist.textContent = 'Dry (Needs Water)';
+                } else if (moisture > 75) {
+                    statusMoist.className = 'kpi-status status-warning';
+                    statusMoist.textContent = 'High Moisture';
+                } else {
+                    statusMoist.className = 'kpi-status status-normal';
+                    statusMoist.textContent = 'Optimal Moisture';
+                }
+            } else {
+                document.getElementById('val-moisture').innerHTML = `--<span class="kpi-unit">%</span>`;
+            }
+
+            // Raw ADC
+            if (data.soil_raw != null || data.raw != null) {
+                document.getElementById('soil-raw-label').textContent = `ADC: ${data.soil_raw ?? data.raw}`;
+            }
+
+            // Temperature
+            const tempVal = data.temperature_c ?? data.temperature ?? data.temp;
+            let tempNum = null;
+            if (tempVal != null) {
+                tempNum = Number(tempVal);
+                const temp = tempNum.toFixed(1);
+                document.getElementById('val-temperature').innerHTML = `${temp}<span class="kpi-unit">°C</span>`;
+                const statusTemp = document.getElementById('status-temperature');
+                if (tempNum > 35) {
+                    statusTemp.className = 'kpi-status status-danger';
+                    statusTemp.textContent = 'High Temperature';
+                } else if (tempNum < 15) {
+                    statusTemp.className = 'kpi-status status-warning';
+                    statusTemp.textContent = 'Cool Environment';
+                } else {
+                    statusTemp.className = 'kpi-status status-normal';
+                    statusTemp.textContent = 'Normal Range';
+                }
+            } else {
+                document.getElementById('val-temperature').innerHTML = `--<span class="kpi-unit">°C</span>`;
+            }
+
+            // Air Humidity
+            const humVal = data.air_humidity ?? data.humidity ?? data.hum;
+            let humNum = null;
+            if (humVal != null) {
+                humNum = Math.round(humVal);
+                document.getElementById('val-humidity').innerHTML = `${humNum}<span class="kpi-unit">%</span>`;
+                document.getElementById('status-humidity').className = 'kpi-status status-normal';
+                document.getElementById('status-humidity').textContent = 'Live DHT11 Reading';
+            } else {
+                document.getElementById('val-humidity').innerHTML = `--<span class="kpi-unit">%</span>`;
+            }
+
+            // Calculate Plant Health Index & VPD
+            calculateHealthIndex(moisture, tempNum, humNum);
+
+            // Pump State
+            updatePumpDisplay(isPumpOn);
+
+            // Raw Payload Display
+            document.getElementById('raw-data-preview').textContent = JSON.stringify(data, null, 2);
+
+            // Timestamp
+            if (data.timestamp) {
+                const date = new Date(data.timestamp > 10000000000 ? data.timestamp : data.timestamp * 1000);
+                document.getElementById('last-updated-text').textContent = date.toLocaleTimeString();
+            } else {
+                document.getElementById('last-updated-text').textContent = 'Just now (Live)';
+            }
+        }
+
+        // Calculate Plant Health Index (0-100) & VPD
+        function calculateHealthIndex(moisture, temp, humidity) {
+            if (moisture == null && temp == null && humidity == null) {
+                document.getElementById('health-score-val').textContent = '--';
+                document.getElementById('health-badge').textContent = 'Awaiting ESP32';
+                return;
+            }
+
+            let score = 100;
+            // Moisture penalty: optimal is 45-70%
+            if (moisture != null) {
+                if (moisture < 35) score -= (35 - moisture) * 1.8;
+                else if (moisture > 80) score -= (moisture - 80) * 1.5;
+            }
+            // Temp penalty: optimal is 21-28C
+            if (temp != null) {
+                if (temp < 18) score -= (18 - temp) * 2;
+                else if (temp > 30) score -= (temp - 30) * 2.5;
+            }
+            // Humidity penalty: optimal is 50-70%
+            if (humidity != null) {
+                if (humidity < 40) score -= (40 - humidity) * 0.8;
+                else if (humidity > 80) score -= (humidity - 80) * 0.8;
+            }
+
+            score = Math.max(10, Math.min(100, Math.round(score)));
+            document.getElementById('health-score-val').textContent = score;
+
+            const circle = document.getElementById('health-score-circle');
+            const badge = document.getElementById('health-badge');
+            const heading = document.getElementById('health-status-heading');
+
+            if (score >= 80) {
+                circle.style.borderColor = '#10b981';
+                circle.style.color = '#10b981';
+                badge.className = 'sp-badge sp-badge-success';
+                badge.textContent = 'Thriving Condition';
+                heading.textContent = 'Plant Health: Excellent';
+            } else if (score >= 60) {
+                circle.style.borderColor = '#3b82f6';
+                circle.style.color = '#3b82f6';
+                badge.className = 'sp-badge sp-badge-info';
+                badge.textContent = 'Stable Growth';
+                heading.textContent = 'Plant Health: Good';
+            } else if (score >= 40) {
+                circle.style.borderColor = '#f59e0b';
+                circle.style.color = '#f59e0b';
+                badge.className = 'sp-badge sp-badge-warning';
+                badge.textContent = 'Needs Water / Climate Check';
+                heading.textContent = 'Plant Health: Attention Required';
+            } else {
+                circle.style.borderColor = '#ef4444';
+                circle.style.color = '#ef4444';
+                badge.className = 'sp-badge sp-badge-danger';
+                badge.textContent = 'Critical Deficit';
+                heading.textContent = 'Plant Health: High Stress';
+            }
+
+            // VPD Calculation (Vapor Pressure Deficit in kPa)
+            if (temp != null && humidity != null) {
+                const vpsat = 0.61078 * Math.exp((17.27 * temp) / (temp + 237.3));
+                const vpact = vpsat * (humidity / 100);
+                const vpd = (vpsat - vpact).toFixed(2);
+                document.getElementById('vpd-index-tag').innerHTML = `<i class="bi bi-wind me-1"></i>VPD: <strong>${vpd} kPa</strong>`;
+            }
+        }
+
+        function updatePumpDisplay(active) {
+            const badge = document.getElementById('pump-state-badge');
+            const btn = document.getElementById('btn-toggle-pump');
+            const label = document.getElementById('pump-btn-label');
+            const card = document.getElementById('pump-card-container');
+
+            if (active) {
+                badge.className = 'sp-badge sp-badge-success';
+                badge.textContent = 'ON (PUMPING)';
+                btn.className = 'sp-btn sp-btn-danger sp-btn-sm';
+                label.textContent = 'Stop Pump Relay (OFF)';
+                if (card) card.classList.add('pump-active-glow');
+            } else {
+                badge.className = 'sp-badge sp-badge-neutral';
+                badge.textContent = 'OFF (STANDBY)';
+                btn.className = 'sp-btn sp-btn-primary sp-btn-sm';
+                label.textContent = 'Start Pump Relay (ON)';
+                if (card) card.classList.remove('pump-active-glow');
+            }
+        }
+
+        // -------------------------------------------------------------
+        // Process Real History Data
+        // -------------------------------------------------------------
+        function processRealHistoryData(raw) {
+            let list = [];
+            if (Array.isArray(raw)) {
+                list = raw.filter(Boolean);
+            } else if (typeof raw === 'object') {
+                list = Object.values(raw);
+            }
+
+            list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            historyData = list;
+
+            if (list.length > 0) {
+                const temps = list.map(r => r.temperature_c ?? r.temperature).filter(t => t != null);
+                if (temps.length > 0) {
+                    const min = Math.min(...temps).toFixed(1);
+                    const max = Math.max(...temps).toFixed(1);
+                    const avg = (temps.reduce((s, c) => s + c, 0) / temps.length).toFixed(1);
+                    document.getElementById('temp-subtext').textContent = `Min: ${min}°C · Max: ${max}°C · Avg: ${avg}°C`;
+                }
+
+                const pumpActivations = list.filter(r => r.pump_on === true).length;
+                document.getElementById('pump-records-count').textContent = `Total historical activations: ${pumpActivations}`;
+
+                updateCharts(list);
+                updateTable(list.slice(-10).reverse());
+            }
+        }
+
+        // -------------------------------------------------------------
+        // Charts Implementation
+        // -------------------------------------------------------------
+        function initCharts() {
+            // Moisture Chart
+            const ctxM = document.getElementById('dashboard-moisture-chart').getContext('2d');
+            moistureChart = new Chart(ctxM, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Soil Moisture (%)',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(226, 232, 240, 0.6)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Temperature & Humidity Chart
+            const ctxT = document.getElementById('dashboard-temp-chart').getContext('2d');
+            tempChart = new Chart(ctxT, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Temperature (°C)', data: [], borderColor: '#ef4444', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2, yAxisID: 'y', pointRadius: 3 },
+                        { label: 'Humidity (%)', data: [], borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2, yAxisID: 'y1', pointRadius: 3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { type: 'linear', position: 'left', title: { display: true, text: '°C' }, grid: { color: 'rgba(226, 232, 240, 0.6)' } },
+                        y1: { type: 'linear', position: 'right', min: 0, max: 100, title: { display: true, text: '%' }, grid: { drawOnChartArea: false } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(records) {
+            const slice = records.slice(-30);
+            const labels = slice.map(r => {
+                if (!r.timestamp) return '';
+                const d = new Date(r.timestamp > 10000000000 ? r.timestamp : r.timestamp * 1000);
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            });
+
+            moistureChart.data.labels = labels;
+            moistureChart.data.datasets[0].data = slice.map(r => r.soil_moisture ?? r.moisture);
+            moistureChart.update('none');
+
+            tempChart.data.labels = labels;
+            tempChart.data.datasets[0].data = slice.map(r => r.temperature_c ?? r.temperature);
+            tempChart.data.datasets[1].data = slice.map(r => r.air_humidity ?? r.humidity);
+            tempChart.update('none');
+        }
+
+        function updateTable(recent) {
+            const tbody = document.getElementById('recent-readings-tbody');
+            if (recent.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-secondary">No records yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = recent.map(r => {
+                const timeStr = r.timestamp ? new Date(r.timestamp > 10000000000 ? r.timestamp : r.timestamp * 1000).toLocaleString() : '—';
+                const m = r.soil_moisture ?? r.moisture;
+                const mDisplay = m != null ? `${Math.round(m)}%` : '—';
+                const t = r.temperature_c ?? r.temperature;
+                const tDisplay = t != null ? `${Number(t).toFixed(1)}°C` : '—';
+                const h = r.air_humidity ?? r.humidity;
+                const hDisplay = h != null ? `${Math.round(h)}%` : '—';
+                const pump = r.pump_on ? '<span class="sp-badge sp-badge-success">ON</span>' : '<span class="sp-badge sp-badge-neutral">OFF</span>';
+                const rawVal = r.soil_raw ?? r.raw ?? '—';
+
+                return `
+                    <tr>
+                        <td class="text-nowrap"><i class="bi bi-clock me-1 text-muted"></i>${timeStr}</td>
+                        <td><strong>${mDisplay}</strong></td>
+                        <td>${tDisplay}</td>
+                        <td>${hDisplay}</td>
+                        <td>${pump}</td>
+                        <td class="text-secondary font-monospace">${rawVal}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // -------------------------------------------------------------
+        // Real Pump Relay Control
+        // -------------------------------------------------------------
+        document.getElementById('btn-toggle-pump').addEventListener('click', async () => {
+            const nextState = !isPumpOn;
+            showToast(`Setting pump relay to ${nextState ? 'ON' : 'OFF'} in Firebase...`, 'info');
+
+            try {
+                const targetRef = ref(db, '/plant/latest');
+                const updatePayload = {
+                    ...(latestData || {}),
+                    pump_on: nextState,
+                    timestamp: Math.floor(Date.now() / 1000)
+                };
+                await set(targetRef, updatePayload);
+                isPumpOn = nextState;
+                updatePumpDisplay(isPumpOn);
+                showToast(`Pump relay successfully updated to ${nextState ? 'ON' : 'OFF'} in /plant/latest!`, 'success');
+            } catch (err) {
+                console.error("Pump toggle error:", err);
+                showToast("Failed to update pump: " + err.message, "danger");
+            }
+        });
+
+        // Test Database Read
+        document.getElementById('btn-test-db').addEventListener('click', async () => {
+            showToast("Reading /plant/latest from Firebase...", "info");
+            try {
+                const snap = await get(ref(db, '/plant/latest'));
+                if (snap.exists()) {
+                    showToast("SUCCESS: /plant/latest is reachable and contains data!", "success");
+                    handleRealDeviceReading(snap.val());
+                } else {
+                    showToast("Database reachable! Waiting for ESP32 to upload to /plant/latest.", "success");
+                }
+            } catch (err) {
+                showToast("Read failed: " + err.message, "danger");
+            }
+        });
+
+        // Refresh
+        document.getElementById('btn-refresh-data').addEventListener('click', () => {
+            showToast("Reloading sensor telemetry...", "info");
+            window.location.reload();
+        });
+
+        // Export CSV
+        document.getElementById('btn-export-csv').addEventListener('click', () => {
+            if (historyData.length === 0) {
+                showToast("No historical readings recorded yet.", "warning");
+                return;
+            }
+            let csv = "Timestamp,Soil_Moisture,Temperature,Humidity,Pump_On,Raw_ADC\n";
+            historyData.forEach(r => {
+                const ts = r.timestamp ? new Date(r.timestamp > 10000000000 ? r.timestamp : r.timestamp * 1000).toISOString() : '';
+                csv += `${ts},${r.soil_moisture ?? r.moisture ?? ''},${r.temperature_c ?? r.temperature ?? ''},${r.air_humidity ?? r.humidity ?? ''},${r.pump_on ? '1' : '0'},${r.soil_raw ?? r.raw ?? ''}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `smartplant-readings-${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("CSV downloaded successfully!", "success");
+        });
+
+        // -------------------------------------------------------------
+        // UI Helpers
+        // -------------------------------------------------------------
+        function initTheme() {
+            const saved = localStorage.getItem('sp_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('sp_theme', next);
+            renderTopnav();
+        }
+
+        function updateConnectionStatus(connected) {
+            const chip = document.getElementById('firebase-status-chip');
+            const badge = document.getElementById('connection-badge');
+            if (chip) {
+                chip.className = `firebase-status ${connected ? 'online' : 'offline'}`;
+                chip.innerHTML = `<span class="status-dot"></span><span class="status-label">${connected ? 'Connected' : 'Offline'}</span>`;
+            }
+            if (badge) {
+                badge.className = connected ? 'sp-badge sp-badge-success' : 'sp-badge sp-badge-danger';
+                badge.textContent = connected ? 'Connected' : 'Offline';
+            }
+        }
+
+        function renderSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            const userEmail = sessionStorage.getItem('sp_user_email') || 'jayaram93915@gmail.com';
+            const userName = sessionStorage.getItem('sp_user_name') || 'Jayaram';
+            const initials = userName.substring(0, 2).toUpperCase();
+
+            sidebar.innerHTML = `
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="bi bi-flower2"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <span class="brand-name">SmartPlant</span>
+                        <span class="brand-tagline">Cloud Platform</span>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <span class="sidebar-section-label">Main Menu</span>
+                    <a href="dashboard.html" class="sidebar-item active">
+                        <i class="bi bi-grid-1x2"></i>
+                        <span class="item-label">Dashboard</span>
+                    </a>
+                    <a href="analytics.html" class="sidebar-item">
+                        <i class="bi bi-graph-up"></i>
+                        <span class="item-label">Sensor Analytics</span>
+                    </a>
+                    <a href="irrigation.html" class="sidebar-item">
+                        <i class="bi bi-droplet-half"></i>
+                        <span class="item-label">Irrigation History</span>
+                    </a>
+                    <a href="devices.html" class="sidebar-item">
+                        <i class="bi bi-cpu"></i>
+                        <span class="item-label">Plants &amp; Devices</span>
+                    </a>
+                    <a href="reports.html" class="sidebar-item">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span class="item-label">Reports &amp; Export</span>
+                    </a>
+                    <span class="sidebar-section-label" style="margin-top: 12px;">System</span>
+                    <a href="settings.html" class="sidebar-item">
+                        <i class="bi bi-gear"></i>
+                        <span class="item-label">Settings</span>
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-avatar">${initials}</div>
+                        <div class="sidebar-user-info">
+                            <div class="sidebar-user-name">${userName}</div>
+                            <div class="sidebar-user-email">${userEmail}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTopnav() {
+            const topnav = document.getElementById('topnav');
+            if (!topnav) return;
+
+            const theme = document.documentElement.getAttribute('data-theme') || 'light';
+
+            topnav.innerHTML = `
+                <div class="topnav-left">
+                    <button class="topnav-hamburger d-md-none" id="mobile-toggle-btn">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div>
+                        <div class="topnav-title">SmartPlant Dashboard</div>
+                        <div class="topnav-breadcrumbs">
+                            <a href="dashboard.html">Home</a>
+                            <span class="separator"><i class="bi bi-chevron-right"></i></span>
+                            <span class="current">Live Telemetry</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="topnav-right">
+                    <div class="firebase-status online" id="firebase-status-chip">
+                        <span class="status-dot"></span>
+                        <span class="status-label">Connected</span>
+                    </div>
+                    <button class="topnav-btn" id="theme-btn" title="Toggle Dark/Light Mode">
+                        <i class="bi ${theme === 'dark' ? 'bi-sun' : 'bi-moon'}"></i>
+                    </button>
+                    <button class="topnav-btn" id="logout-btn" title="Sign Out">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try { await signOut(auth); } catch (e) {}
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            });
+
+            const mobileBtn = document.getElementById('mobile-toggle-btn');
+            if (mobileBtn) {
+                mobileBtn.addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('mobile-open');
+                    document.getElementById('sidebar-overlay').classList.toggle('active');
+                });
+            }
+            document.getElementById('sidebar-overlay').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} alert-dismissible fade show shadow-sm`;
+            toast.style.minWidth = '280px';
+            toast.innerHTML = `
+                <span>${message}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
