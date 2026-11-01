@@ -36,20 +36,6 @@ A modern, production-grade Smart Agriculture & IoT Plant Monitoring Web Applicat
 - Raw ESP32 ADC values (`soil_raw`), device uptime (`uptime_ms`), and execution timings.
 - Raw JSON packet inspector with 1-click clipboard copy for hardware debugging.
 
-### 3. Historical Telemetry & Analytics (`pages/history.html`)
-- Three dedicated Chart.js line graphs:
-  1. **Soil Moisture History (%)**
-  2. **Temperature History (°C)**
-  3. **Air Humidity History (%)**
-- Summary statistics cards: Period Average, Minimum, and Maximum for each parameter.
-- Full paginated historical records table with live search and filtering.
-- **CSV Data Export** for offline agricultural research.
-
-### 4. Plant Profile & Botanical Guide (`pages/plant-info.html`)
-- Detailed profile for *Monstera deliciosa* with high-resolution botanical photography.
-- Configured environmental thresholds and live reading indicators.
-- Care protocols for light exposure, substrate formulation, watering routines, and fertilization.
-
 ---
 
 ## 🔒 Firebase Backend Architecture & Preservation
@@ -90,15 +76,16 @@ The application includes a built-in authentication modal with 1-click verified c
 ```
 hey/
 ├── index.html                   # Main Dashboard (Repository Root for GitHub Pages)
+├── manifest.json                # Progressive Web App manifest
+├── sw.js                        # PWA Service Worker for offline capability
+├── database.rules.json          # Firebase Realtime Database rules reference
 ├── .nojekyll                    # Disables Jekyll processing on GitHub Pages
 ├── README.md                    # Project documentation & deployment guide
 ├── start-server.bat             # Local testing launcher (Windows)
 ├── server.ps1                   # Local lightweight static HTTP server
 │
 ├── pages/
-│   ├── monitoring.html          # Dedicated Live Telemetry Stream page
-│   ├── history.html             # Dedicated Historical Graphs & Table page
-│   └── plant-info.html          # Plant Botanical Profile & Care Guide
+│   └── monitoring.html          # Dedicated Live Telemetry Stream page
 │
 ├── css/
 │   ├── style.css                # Design system tokens, sidebar, topbar, modal
@@ -112,13 +99,10 @@ hey/
 │   ├── plant-service.js         # Plant profile & multi-sensor health diagnosis
 │   ├── charts.js                # Chart.js instances, curves, & range filters
 │   ├── dashboard.js             # Main dashboard controller
-│   ├── history.js               # History table, pagination, search & CSV export
 │   └── app.js                   # Navigation shell, mobile drawer & theme switcher
 │
 └── assets/
-    ├── icons/                   # App icons & PWA assets (icon-192.png, icon-512.png)
-    └── images/
-        └── plant.jpg            # Botanical photograph of Monstera Deliciosa
+    └── icons/                   # App icons & PWA assets (icon-192.png, icon-512.png)
 ```
 
 ---

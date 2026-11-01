@@ -3,13 +3,11 @@
 // Provides offline capability & app installability
 // ================================================================
 
-const CACHE_NAME = 'smartplant-pwa-v2';
+const CACHE_NAME = 'smartplant-pwa-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './pages/monitoring.html',
-  './pages/history.html',
-  './pages/plant-info.html',
   './manifest.json',
   './favicon.ico',
   './css/style.css',
@@ -18,14 +16,12 @@ const STATIC_ASSETS = [
   './js/app.js',
   './js/charts.js',
   './js/dashboard.js',
-  './js/history.js',
   './js/firebase-config.js',
   './js/firebase-service.js',
   './js/sensor-service.js',
   './js/plant-service.js',
   './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png',
-  './assets/images/plant.jpg'
+  './assets/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {

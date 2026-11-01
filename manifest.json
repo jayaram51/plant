@@ -36,20 +36,6 @@
       "description": "Real-time telemetry streaming",
       "url": "./pages/monitoring.html",
       "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Plant History",
-      "short_name": "History",
-      "description": "Interactive graphs & data table",
-      "url": "./pages/history.html",
-      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Plant Information",
-      "short_name": "Care Guide",
-      "description": "Botanical tolerances & care guide",
-      "url": "./pages/plant-info.html",
-      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
