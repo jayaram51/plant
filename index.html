@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartPlant — Smart IoT Plant Monitoring Dashboard</title>
-  <meta name="description" content="Professional Smart Plant Monitoring Dashboard powered by Firebase Realtime Database. Monitor soil moisture, temperature, humidity, and plant health telemetry in real-time.">
+  <title>Smart Agriculture — IoT Monitoring Dashboard</title>
+  <meta name="description" content="Professional Smart Agriculture Monitoring Dashboard powered by Firebase Realtime Database. Monitor soil moisture, temperature, humidity, and plant health telemetry in real-time.">
   <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 
   <!-- Progressive Web App Meta Tags & Manifest -->
@@ -13,7 +13,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SmartPlant">
+  <meta name="apple-mobile-web-app-title" content="Smart Agriculture">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Google Fonts: Inter -->
@@ -46,10 +46,11 @@
           <i data-lucide="sprout"></i>
         </div>
         <div class="brand-info">
-          <span class="brand-title">SmartPlant</span>
-          <span class="brand-subtitle">IoT Monitor</span>
+          <span class="brand-title">Smart Agriculture</span>
+          <span class="brand-subtitle">IoT Dashboard</span>
         </div>
       </a>
+      <button class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close Sidebar">&times;</button>
     </div>
 
     <nav class="sidebar-nav">
@@ -61,6 +62,10 @@
       <a href="pages/monitoring.html" class="nav-link">
         <i data-lucide="activity"></i>
         <span>Live Monitoring</span>
+      </a>
+      <a href="pages/history.html" class="nav-link">
+        <i data-lucide="history"></i>
+        <span>Plant History</span>
       </a>
     </nav>
 
@@ -360,7 +365,9 @@
             <i data-lucide="table"></i>
             <span>Recent Sensor Records</span>
           </h2>
-          <span class="text-xs text-muted">Real-time Telemetry Stream</span>
+          <a href="pages/history.html" class="sp-btn sp-btn-secondary sp-btn-sm">
+            View Complete History <i data-lucide="arrow-right" class="icon-sm"></i>
+          </a>
         </div>
 
         <div class="table-responsive">

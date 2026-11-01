@@ -1,7 +1,7 @@
 {
-  "name": "SmartPlant IoT — Smart Plant Monitoring",
-  "short_name": "SmartPlant",
-  "description": "Professional Smart IoT Plant Monitoring Web App powered by Firebase Realtime Database",
+  "name": "Smart Agriculture — IoT Monitoring System",
+  "short_name": "Smart Agriculture",
+  "description": "Professional Smart Agriculture & IoT Plant Monitoring Web Application powered by Firebase Realtime Database",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -35,6 +35,13 @@
       "short_name": "Live",
       "description": "Real-time telemetry streaming",
       "url": "./pages/monitoring.html",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Plant History",
+      "short_name": "History",
+      "description": "Historical sensor charts & logs",
+      "url": "./pages/history.html",
       "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

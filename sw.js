@@ -3,11 +3,12 @@
 // Provides offline capability & app installability
 // ================================================================
 
-const CACHE_NAME = 'smartplant-pwa-v3';
+const CACHE_NAME = 'smart-agriculture-pwa-v1';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './pages/monitoring.html',
+  './pages/history.html',
   './manifest.json',
   './favicon.ico',
   './css/style.css',
@@ -16,6 +17,7 @@ const STATIC_ASSETS = [
   './js/app.js',
   './js/charts.js',
   './js/dashboard.js',
+  './js/history.js',
   './js/firebase-config.js',
   './js/firebase-service.js',
   './js/sensor-service.js',

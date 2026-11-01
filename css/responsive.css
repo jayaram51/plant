@@ -1,20 +1,22 @@
 /* ================================================================
-   Smart Plant Monitoring — Responsive Design & Breakpoints
+   Smart Agriculture — Premium Mobile & Responsive Design System
+   Optimized for Smartphones (iOS & Android), Tablets & Laptops
    ================================================================ */
 
-/* Sidebar Overlay for Mobile */
+/* Mobile Sidebar Backdrop Overlay */
 .sidebar-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(6, 40, 28, 0.45);
-  backdrop-filter: blur(3px);
-  z-index: 95;
+  background-color: rgba(6, 40, 28, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9990;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-overlay.active {
@@ -22,30 +24,63 @@
   visibility: visible;
 }
 
-/* Large Laptop / Medium Desktop (max-width: 1200px) */
+/* Close Button inside Mobile Sidebar */
+.sidebar-close-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  padding: 6px;
+  cursor: pointer;
+  margin-left: auto;
+  line-height: 1;
+}
+
+/* ================================================================
+   Tablet & Desktop Breakpoints
+   ================================================================ */
+
+/* Medium Laptops & Desktops (max-width: 1200px) */
 @media (max-width: 1200px) {
   .sensor-cards-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
 
   .dashboard-two-col {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .history-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 /* Tablets (max-width: 992px) */
 @media (max-width: 992px) {
-  :root {
-    --sidebar-width: 260px;
-  }
-
   .app-sidebar {
     transform: translateX(-100%);
-    box-shadow: var(--shadow-xl);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 9999;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .app-sidebar.mobile-open {
     transform: translateX(0);
+  }
+
+  .sidebar-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .app-main {
@@ -54,100 +89,339 @@
   }
 
   .mobile-menu-toggle {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-surface-alt);
+    border: 1px solid var(--border-subtle);
+    color: var(--sp-primary-700);
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
-  .overview-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .overview-stats-col {
-    width: 100%;
-    justify-content: flex-start;
-  }
-}
-
-/* Small Tablets & Large Phones (max-width: 768px) */
-@media (max-width: 768px) {
   .app-topbar {
     padding: 0 16px;
+    height: 64px;
   }
 
   .page-content-wrapper {
     padding: 16px;
   }
 
+  .overview-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .overview-stats-col {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .history-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+/* ================================================================
+   Smartphone Breakpoints (Phones <= 768px)
+   ================================================================ */
+@media (max-width: 768px) {
+  /* Layout Spacing */
+  .app-topbar {
+    padding: 0 12px;
+    height: 60px;
+  }
+
+  .topbar-left {
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .page-heading-group {
+    min-width: 0;
+  }
+
+  .page-main-title {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .page-breadcrumb {
+    display: none;
+  }
+
+  .topbar-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .page-content-wrapper {
+    padding: 12px;
+  }
+
+  /* Overview Banner */
+  .overview-banner {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+  }
+
+  .overview-info-col h1 {
+    font-size: 1.15rem;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .overview-desc {
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .overview-stats-col {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .overview-stat-pill {
+    padding: 8px 10px;
+  }
+
+  .overview-stat-label {
+    font-size: 0.65rem;
+  }
+
+  .overview-stat-val {
+    font-size: 0.85rem;
+  }
+
+  /* 3 Primary Sensor Cards */
   .sensor-cards-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .sensor-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .sensor-card-header {
+    margin-bottom: 10px;
+  }
+
+  .sensor-label {
+    font-size: 0.84rem;
+  }
+
+  .sensor-main-value {
+    font-size: 2rem;
+  }
+
+  .sensor-unit {
+    font-size: 0.95rem;
+  }
+
+  .circular-gauge-container {
+    width: 64px;
+    height: 64px;
+  }
+
+  .sensor-card-footer {
+    padding-top: 8px;
+    font-size: 0.72rem;
+  }
+
+  /* Diagnosis & Alerts */
+  .dashboard-two-col {
     gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .content-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .card-heading {
+    font-size: 0.95rem;
   }
 
   .card-heading-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .health-overview-box {
+    padding: 12px;
+    gap: 14px;
+  }
+
+  .health-radial-badge {
+    width: 60px;
+    height: 60px;
+  }
+
+  .health-score-number {
+    font-size: 1.15rem;
+  }
+
+  .health-summary-text {
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .recommendation-item {
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
+
+  /* Charts */
+  .chart-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+  }
+
+  .chart-canvas-box {
+    height: 220px;
+    margin-top: 10px;
   }
 
   .chart-filter-group {
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px;
   }
 
   .chart-filter-btn {
     flex: 1;
+    min-width: 64px;
+    padding: 6px 8px;
+    font-size: 0.72rem;
     text-align: center;
   }
 
-  .chart-canvas-box {
-    height: 250px;
-  }
-
+  /* History Summary Cards */
   .history-summary-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
   }
 
   .history-actions-bar {
     flex-direction: column;
-    align-items: stretch !important;
-    gap: 12px !important;
+    align-items: stretch;
+    gap: 10px;
   }
 
   .history-search-box {
     width: 100% !important;
   }
-}
 
-/* Small Phones (max-width: 480px) */
-@media (max-width: 480px) {
-  .topbar-right {
-    gap: 8px;
+  /* Table Mobile Scroll Optimization */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
   }
 
+  .sp-table {
+    min-width: 520px;
+    font-size: 0.78rem;
+  }
+
+  .sp-table th, .sp-table td {
+    padding: 10px 12px;
+  }
+
+  /* Buttons on Mobile */
+  .sp-btn {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* ================================================================
+   Ultra-Compact Screen Sizing (Phones <= 420px: iPhone SE, etc.)
+   ================================================================ */
+@media (max-width: 420px) {
+  .app-topbar {
+    padding: 0 8px;
+  }
+
+  .mobile-menu-toggle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .page-main-title {
+    font-size: 0.92rem;
+  }
+
+  .topbar-right {
+    gap: 4px;
+  }
+
+  /* Hide connection label on tiny screens, keeping only the animated status dot */
   .connection-chip span:last-child {
     display: none;
   }
 
+  .connection-chip {
+    padding: 5px 7px;
+  }
+
+  /* Hide last sync time badge on tiny screens to prevent wrapping */
   .last-sync-badge {
     display: none;
   }
 
-  .overview-stats-col {
-    flex-direction: column;
-    gap: 10px;
+  .pwa-install-btn span {
+    display: none;
   }
 
-  .overview-stat-pill {
-    width: 100%;
+  .pwa-install-btn {
+    padding: 6px 8px;
+  }
+
+  .overview-stats-col {
+    grid-template-columns: 1fr;
   }
 
   .sensor-main-value {
-    font-size: 1.8rem;
+    font-size: 1.75rem;
+  }
+
+  .circular-gauge-container {
+    width: 56px;
+    height: 56px;
   }
 
   .sp-modal {
-    padding: 20px 16px;
+    width: 95%;
+    padding: 18px 14px;
   }
 }

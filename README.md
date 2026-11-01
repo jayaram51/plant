@@ -1,4 +1,4 @@
-# 🌱 SmartPlant — Smart IoT Plant Monitoring Web Application
+# 🌾 Smart Agriculture — IoT Monitoring Dashboard & Web Application
 
 A modern, production-grade Smart Agriculture & IoT Plant Monitoring Web Application built with **HTML5, CSS3, Vanilla JavaScript (ES6+), Chart.js, and Firebase Realtime Database**. Designed to run as a 100% static frontend web application hosted directly on **GitHub Pages**.
 
@@ -6,8 +6,8 @@ A modern, production-grade Smart Agriculture & IoT Plant Monitoring Web Applicat
 
 ## 🚀 Live Demo & Deployment
 
-- **Repository**: [https://github.com/jayaram51/hey](https://github.com/jayaram51/hey)
-- **Live GitHub Pages URL**: `https://jayaram51.github.io/hey/`
+- **Repository**: [https://github.com/jayaram51/plant](https://github.com/jayaram51/plant)
+- **Live GitHub Pages URL**: `https://jayaram51.github.io/plant/`
 
 ---
 
@@ -35,6 +35,15 @@ A modern, production-grade Smart Agriculture & IoT Plant Monitoring Web Applicat
 - Dedicated radial gauges and progress bars for all environmental sensors.
 - Raw ESP32 ADC values (`soil_raw`), device uptime (`uptime_ms`), and execution timings.
 - Raw JSON packet inspector with 1-click clipboard copy for hardware debugging.
+
+### 3. Historical Telemetry & Analytics (`pages/history.html`)
+- Three dedicated Chart.js line graphs:
+  1. **Soil Moisture History (%)**
+  2. **Temperature History (°C)**
+  3. **Air Humidity History (%)**
+- Summary statistics cards: Period Average, Minimum, and Maximum for each parameter.
+- Full paginated historical records table with live search and filtering.
+- **CSV Data Export** for offline agricultural research.
 
 ---
 
@@ -85,7 +94,8 @@ hey/
 ├── server.ps1                   # Local lightweight static HTTP server
 │
 ├── pages/
-│   └── monitoring.html          # Dedicated Live Telemetry Stream page
+│   ├── monitoring.html          # Dedicated Live Telemetry Stream page
+│   └── history.html             # Dedicated Historical Graphs & Records Table page
 │
 ├── css/
 │   ├── style.css                # Design system tokens, sidebar, topbar, modal
@@ -99,6 +109,7 @@ hey/
 │   ├── plant-service.js         # Plant profile & multi-sensor health diagnosis
 │   ├── charts.js                # Chart.js instances, curves, & range filters
 │   ├── dashboard.js             # Main dashboard controller
+│   ├── history.js               # History table, search, pagination & CSV export
 │   └── app.js                   # Navigation shell, mobile drawer & theme switcher
 │
 └── assets/

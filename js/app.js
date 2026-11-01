@@ -103,6 +103,12 @@ function initMobileNav() {
     const hamburger = document.getElementById('mobile-menu-toggle');
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
+    const closeBtn = document.getElementById('sidebar-close-btn');
+
+    const closeSidebar = () => {
+        if (sidebar) sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('active');
+    };
 
     if (hamburger && sidebar) {
         hamburger.addEventListener('click', () => {
@@ -111,10 +117,22 @@ function initMobileNav() {
         });
     }
 
-    if (overlay && sidebar) {
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSidebar);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebar);
+    }
+
+    // Auto-close drawer when clicking any nav item on mobile
+    if (sidebar) {
+        sidebar.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 992) {
+                    closeSidebar();
+                }
+            });
         });
     }
 }
