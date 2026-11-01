@@ -1,5 +1,5 @@
 @echo off
-title SmartPlant Cloud — Local Server
-cd /d "%~dp0smartplant-cloud"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0smartplant-cloud\server.ps1"
+title SmartPlant IoT Monitoring — Local Static Server
+cd /d "%~dp0"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0server.ps1"
 pause

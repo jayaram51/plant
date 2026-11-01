@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartPlant — Smart IoT Plant Monitoring Dashboard</title>
+  <meta name="description" content="Professional Smart Plant Monitoring Dashboard powered by Firebase Realtime Database. Monitor soil moisture, temperature, humidity, and plant health telemetry in real-time.">
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Mobile Drawer Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="sidebar-header">
+      <a href="index.html" class="brand-link">
+        <div class="brand-logo-badge">
+          <i data-lucide="sprout"></i>
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">SmartPlant</span>
+          <span class="brand-subtitle">IoT Monitor</span>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-title">Navigation</span>
+      <a href="index.html" class="nav-link active">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="pages/monitoring.html" class="nav-link">
+        <i data-lucide="activity"></i>
+        <span>Live Monitoring</span>
+      </a>
+      <a href="pages/history.html" class="nav-link">
+        <i data-lucide="history"></i>
+        <span>Plant History</span>
+      </a>
+      <a href="pages/plant-info.html" class="nav-link">
+        <i data-lucide="leaf"></i>
+        <span>Plant Information</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile-widget">
+        <div class="user-avatar" id="user-avatar-initials">G</div>
+        <div class="user-details">
+          <div class="user-name" id="current-user-name">Guest User</div>
+          <div class="user-role" id="current-user-email">Firebase Client</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <main class="app-main">
+    <!-- Top Navigation Bar -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open Navigation">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="page-heading-group">
+          <h1 class="page-main-title">Dashboard Overview</h1>
+          <div class="page-breadcrumb">
+            <span>SmartPlant</span>
+            <i data-lucide="chevron-right" class="icon-sm"></i>
+            <span>Telemetry Dashboard</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Firebase Connection Status Chip -->
+        <div class="status-pill status-neutral connection-chip" id="firebase-status-chip">
+          <span class="status-dot"></span>
+          <span>Connecting...</span>
+        </div>
+
+        <!-- Last Updated Time Badge -->
+        <div class="last-sync-badge" title="Firebase RTDB Sync Time">
+          <i data-lucide="clock" class="icon-sm"></i>
+          <span id="last-sync-relative">Awaiting data</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle theme">
+          <i data-lucide="moon" id="theme-toggle-icon"></i>
+        </button>
+
+        <!-- Auth Button -->
+        <button class="sp-btn sp-btn-secondary sp-btn-sm" id="auth-action-btn">
+          <i data-lucide="log-in" class="icon-sm"></i>
+          <span class="d-none d-sm-inline">Sign In</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Body -->
+    <div class="page-content-wrapper">
+      
+      <!-- Welcome and Overview Section -->
+      <section class="overview-banner">
+        <div class="overview-info-col">
+          <h1>Monstera Deliciosa — Indoor Node</h1>
+          <p class="overview-desc">Continuous real-time ESP32 sensor telemetry synchronized with Firebase Realtime Database.</p>
+        </div>
+        <div class="overview-stats-col">
+          <div class="overview-stat-pill">
+            <span class="overview-stat-label">Date</span>
+            <span class="overview-stat-val" id="current-date-display">Today</span>
+          </div>
+          <div class="overview-stat-pill">
+            <span class="overview-stat-label">Plant Status</span>
+            <div class="mt-1">
+              <span class="status-pill status-neutral" id="header-health-pill">Evaluating...</span>
+            </div>
+          </div>
+          <div class="overview-stat-pill">
+            <span class="overview-stat-label">Last Reading Time</span>
+            <span class="overview-stat-val" id="last-sync-timestamp">--:--:--</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 Primary Sensor Cards + Water Pump Card -->
+      <section class="sensor-cards-grid">
+        
+        <!-- CARD 1: SOIL MOISTURE -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box soil">
+                <i data-lucide="droplets"></i>
+              </div>
+              <span class="sensor-label">Soil Moisture</span>
+            </div>
+            <span class="status-pill status-neutral" id="moisture-status">Evaluating</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="moisture-val">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+
+            <!-- Circular Progress Indicator -->
+            <div class="circular-gauge-container">
+              <svg class="circular-gauge-svg" viewBox="0 0 80 80">
+                <circle class="gauge-circle-bg" cx="40" cy="40" r="36" />
+                <circle class="gauge-circle-fill" id="moisture-circle-progress" cx="40" cy="40" r="36" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span class="threshold-range">Target: 30% – 65%</span>
+            <span id="moisture-card-time">—</span>
+          </div>
+        </div>
+
+        <!-- CARD 2: TEMPERATURE -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box temp">
+                <i data-lucide="thermometer"></i>
+              </div>
+              <span class="sensor-label">Temperature</span>
+            </div>
+            <span class="status-pill status-neutral" id="temp-status">Evaluating</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="temp-val">--</span>
+              <span class="sensor-unit">°C</span>
+            </div>
+          </div>
+
+          <div class="sensor-progress-track">
+            <div class="sensor-progress-bar" id="temp-bar-fill" style="width: 0%; background-color: var(--status-danger);"></div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span class="threshold-range">Ideal: 18°C – 28°C</span>
+            <span id="temperature-card-time">—</span>
+          </div>
+        </div>
+
+        <!-- CARD 3: HUMIDITY -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box hum">
+                <i data-lucide="cloud-rain"></i>
+              </div>
+              <span class="sensor-label">Air Humidity</span>
+            </div>
+            <span class="status-pill status-neutral" id="humidity-status">Evaluating</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="humidity-val">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+          </div>
+
+          <div class="sensor-progress-track">
+            <div class="sensor-progress-bar" id="humidity-bar-fill" style="width: 0%; background-color: var(--status-info);"></div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span class="threshold-range">Target: 40% – 70%</span>
+            <span id="humidity-card-time">—</span>
+          </div>
+        </div>
+
+        <!-- CARD 4: WATER PUMP RELAY -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box pump" id="pump-icon-container">
+                <i data-lucide="power"></i>
+              </div>
+              <span class="sensor-label">Irrigation Relay</span>
+            </div>
+            <span class="status-pill status-neutral" id="pump-status">IDLE</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="pump-val">OFF</span>
+            </div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span class="threshold-range">ESP32 Auto-Pump</span>
+            <span id="pump-card-time">—</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Health Assessment & Environmental Alerts Two-Column -->
+      <section class="dashboard-two-col">
+        
+        <!-- Plant Health Overview -->
+        <div class="content-card">
+          <div class="card-heading-row">
+            <h2 class="card-heading">
+              <i data-lucide="heart-pulse" class="text-success"></i>
+              <span>Plant Health Diagnosis</span>
+            </h2>
+            <span class="status-pill status-neutral" id="plant-health-status">Analyzing</span>
+          </div>
+
+          <div class="health-overview-box">
+            <div class="health-radial-badge">
+              <span class="health-score-number" id="plant-health-score">--</span>
+              <span class="health-score-caption">Score</span>
+            </div>
+            <div class="health-summary-text" id="plant-health-summary">
+              Evaluating multi-parameter sensor readings from soil moisture, ambient temperature, and humidity sensors.
+            </div>
+          </div>
+
+          <h3 style="font-size: 0.88rem; font-weight: 700; color: var(--text-heading); margin-bottom: 12px;">
+            Care Guidance &amp; Recommendations
+          </h3>
+          <ul class="care-recommendations-list" id="plant-care-recommendations">
+            <li class="recommendation-item">
+              <i data-lucide="check-circle-2" class="rec-icon"></i>
+              <span>Awaiting telemetry connection to calculate plant-specific care recommendations.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Environmental Alerts Section -->
+        <div class="content-card">
+          <div class="card-heading-row">
+            <h2 class="card-heading">
+              <i data-lucide="bell" class="text-warning"></i>
+              <span>Environmental Alerts</span>
+            </h2>
+            <span class="status-pill status-neutral" id="alerts-count-badge" style="display:none;">0</span>
+          </div>
+
+          <div class="alerts-feed" id="alerts-feed-container">
+            <div class="empty-feed-card">
+              <i data-lucide="shield-check" class="empty-icon"></i>
+              <div class="empty-text">
+                <strong>Monitoring Environmental Thresholds</strong>
+                <span>Real-time alerts will appear here when sensors breach configured safety margins.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Combined Interactive Graph -->
+      <section class="chart-card">
+        <div class="card-heading-row">
+          <div>
+            <h2 class="card-heading">
+              <i data-lucide="line-chart"></i>
+              <span>Multi-Sensor Telemetry Trends</span>
+            </h2>
+            <p class="text-xs text-muted">Continuous historical correlation of moisture, temperature, and air humidity</p>
+          </div>
+
+          <div class="chart-filter-group">
+            <button class="chart-filter-btn active" data-range="24h">24 Hours</button>
+            <button class="chart-filter-btn" data-range="7d">7 Days</button>
+            <button class="chart-filter-btn" data-range="30d">30 Days</button>
+            <button class="chart-filter-btn" data-range="all">All Data</button>
+          </div>
+        </div>
+
+        <div class="chart-canvas-box">
+          <canvas id="chart-combined"></canvas>
+        </div>
+      </section>
+
+      <!-- Recent Telemetry Table -->
+      <section class="content-card">
+        <div class="card-heading-row">
+          <h2 class="card-heading">
+            <i data-lucide="table"></i>
+            <span>Recent Sensor Records</span>
+          </h2>
+          <a href="pages/history.html" class="sp-btn sp-btn-secondary sp-btn-sm">
+            View Complete History <i data-lucide="arrow-right" class="icon-sm"></i>
+          </a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="sp-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Soil Moisture</th>
+                <th>Temperature</th>
+                <th>Air Humidity</th>
+                <th>Pump Status</th>
+              </tr>
+            </thead>
+            <tbody id="recent-readings-tbody">
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">Connecting to Firebase Realtime Database...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Firebase Authentication Modal -->
+<div class="modal-backdrop" id="auth-modal-backdrop"></div>
+<div class="sp-modal" id="auth-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">Sign In to Firebase</h3>
+    <button class="modal-close-btn" id="auth-modal-close">&times;</button>
+  </div>
+  
+  <p class="text-xs text-muted mb-3" style="margin-bottom: 16px;">
+    Firebase Realtime Database rules require authentication (<code style="color: var(--sp-primary-700)">auth != null</code>) to read live sensor readings.
+  </p>
+
+  <div id="auth-error-alert" class="status-pill status-danger mb-3" style="display:none; width: 100%; border-radius: var(--radius-sm); margin-bottom: 14px; padding: 10px;"></div>
+
+  <form id="auth-login-form">
+    <div class="form-group">
+      <label class="form-label" for="login-email-input">Firebase User Email</label>
+      <input type="email" id="login-email-input" class="form-input" value="jayaram93915@gmail.com" required autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="login-password-input">Password</label>
+      <input type="password" id="login-password-input" class="form-input" value="Abc&1234" required autocomplete="current-password">
+    </div>
+
+    <button type="submit" class="sp-btn sp-btn-primary w-100" id="login-submit-btn" style="width: 100%; margin-top: 8px;">
+      Sign In &amp; Connect Database
+    </button>
+  </form>
+
+  <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); text-align: center;">
+    <button type="button" class="sp-btn sp-btn-secondary sp-btn-sm" id="quick-login-verified-btn" style="width: 100%;">
+      <i data-lucide="zap" class="icon-sm"></i> 1-Click Quick Connect (Pre-Configured Credentials)
+    </button>
+    <div class="text-xs text-muted mt-2" style="margin-top: 8px;">
+      Firebase Project: <code>virushka-d2b72</code>
+    </div>
+  </div>
+</div>
+
+<!-- Application JavaScript Modules -->
+<script type="module">
+  import './js/app.js';
+  import { initDashboard } from './js/dashboard.js';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+  });
+</script>
+
+</body>
+</html>

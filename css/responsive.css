@@ -1,0 +1,153 @@
+/* ================================================================
+   Smart Plant Monitoring — Responsive Design & Breakpoints
+   ================================================================ */
+
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(6, 40, 28, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 95;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Large Laptop / Medium Desktop (max-width: 1200px) */
+@media (max-width: 1200px) {
+  .sensor-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablets (max-width: 992px) */
+@media (max-width: 992px) {
+  :root {
+    --sidebar-width: 260px;
+  }
+
+  .app-sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .overview-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .overview-stats-col {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Small Tablets & Large Phones (max-width: 768px) */
+@media (max-width: 768px) {
+  .app-topbar {
+    padding: 0 16px;
+  }
+
+  .page-content-wrapper {
+    padding: 16px;
+  }
+
+  .sensor-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card-heading-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .chart-filter-group {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .chart-filter-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .chart-canvas-box {
+    height: 250px;
+  }
+
+  .history-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .history-actions-bar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .history-search-box {
+    width: 100% !important;
+  }
+}
+
+/* Small Phones (max-width: 480px) */
+@media (max-width: 480px) {
+  .topbar-right {
+    gap: 8px;
+  }
+
+  .connection-chip span:last-child {
+    display: none;
+  }
+
+  .last-sync-badge {
+    display: none;
+  }
+
+  .overview-stats-col {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .overview-stat-pill {
+    width: 100%;
+  }
+
+  .sensor-main-value {
+    font-size: 1.8rem;
+  }
+
+  .sp-modal {
+    padding: 20px 16px;
+  }
+}

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Sensor Telemetry — SmartPlant IoT</title>
+  <meta name="description" content="Dedicated real-time live monitoring console for ESP32 plant sensors via Firebase Realtime Database.">
+  <link rel="icon" type="image/png" href="../assets/icons/icon-192.png">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Mobile Drawer Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="sidebar-header">
+      <a href="../index.html" class="brand-link">
+        <div class="brand-logo-badge">
+          <i data-lucide="sprout"></i>
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">SmartPlant</span>
+          <span class="brand-subtitle">IoT Monitor</span>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-title">Navigation</span>
+      <a href="../index.html" class="nav-link">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="monitoring.html" class="nav-link active">
+        <i data-lucide="activity"></i>
+        <span>Live Monitoring</span>
+      </a>
+      <a href="history.html" class="nav-link">
+        <i data-lucide="history"></i>
+        <span>Plant History</span>
+      </a>
+      <a href="plant-info.html" class="nav-link">
+        <i data-lucide="leaf"></i>
+        <span>Plant Information</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile-widget">
+        <div class="user-avatar" id="user-avatar-initials">G</div>
+        <div class="user-details">
+          <div class="user-name" id="current-user-name">Guest User</div>
+          <div class="user-role" id="current-user-email">Firebase Client</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="app-main">
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open Navigation">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="page-heading-group">
+          <h1 class="page-main-title">Live Sensor Monitoring</h1>
+          <div class="page-breadcrumb">
+            <a href="../index.html" style="color: inherit; text-decoration: none;">Dashboard</a>
+            <i data-lucide="chevron-right" class="icon-sm"></i>
+            <span>Real-time Telemetry Stream</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="status-pill status-neutral connection-chip" id="firebase-status-chip">
+          <span class="status-dot"></span>
+          <span>Connecting...</span>
+        </div>
+
+        <div class="last-sync-badge">
+          <i data-lucide="clock" class="icon-sm"></i>
+          <span id="live-time-ticker">Awaiting data</span>
+        </div>
+
+        <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme">
+          <i data-lucide="moon" id="theme-toggle-icon"></i>
+        </button>
+
+        <button class="sp-btn sp-btn-secondary sp-btn-sm" id="auth-action-btn">
+          <i data-lucide="log-in" class="icon-sm"></i>
+          <span class="d-none d-sm-inline">Sign In</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content-wrapper">
+      
+      <!-- Telemetry Stream Banner -->
+      <section class="overview-banner">
+        <div class="overview-info-col">
+          <h1>Live ESP32 Sensor Stream</h1>
+          <p class="overview-desc">Active WebSocket subscription listening to Firebase path <code>/plant/latest</code>. Updates trigger automatically upon new sensor publication.</p>
+        </div>
+        <div class="overview-stats-col">
+          <div class="overview-stat-pill">
+            <span class="overview-stat-label">Stream Status</span>
+            <div class="mt-1">
+              <span class="status-pill status-success" id="stream-status-pill">
+                <span class="status-dot status-dot-pulse"></span>
+                <span>Subscribed</span>
+              </span>
+            </div>
+          </div>
+          <div class="overview-stat-pill">
+            <span class="overview-stat-label">Device Uptime</span>
+            <span class="overview-stat-val" id="device-uptime-val">-- ms</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Sensor Telemetry Gauges Grid -->
+      <section class="sensor-cards-grid">
+        
+        <!-- Soil Moisture Gauge -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box soil">
+                <i data-lucide="droplets"></i>
+              </div>
+              <span class="sensor-label">Soil Moisture</span>
+            </div>
+            <span class="status-pill status-neutral" id="live-moisture-status">Evaluating</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="live-moisture-val">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="circular-gauge-container">
+              <svg class="circular-gauge-svg" viewBox="0 0 80 80">
+                <circle class="gauge-circle-bg" cx="40" cy="40" r="36" />
+                <circle class="gauge-circle-fill" id="live-moisture-circle" cx="40" cy="40" r="36" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span>Raw ADC: <strong id="live-soil-raw">--</strong></span>
+            <span id="live-moisture-age">—</span>
+          </div>
+        </div>
+
+        <!-- Temperature Gauge -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box temp">
+                <i data-lucide="thermometer"></i>
+              </div>
+              <span class="sensor-label">Temperature</span>
+            </div>
+            <span class="status-pill status-neutral" id="live-temp-status">Evaluating</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="live-temp-val">--</span>
+              <span class="sensor-unit">°C</span>
+            </div>
+          </div>
+
+          <div class="sensor-progress-track">
+            <div class="sensor-progress-bar" id="live-temp-bar" style="width: 0%; background-color: var(--status-danger);"></div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span>Scale: 0°C – 45°C</span>
+            <span id="live-temp-age">—</span>
+          </div>
+        </div>
+
+        <!-- Humidity Gauge -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box hum">
+                <i data-lucide="cloud-rain"></i>
+              </div>
+              <span class="sensor-label">Air Humidity</span>
+            </div>
+            <span class="status-pill status-neutral" id="live-hum-status">Evaluating</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="live-hum-val">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+          </div>
+
+          <div class="sensor-progress-track">
+            <div class="sensor-progress-bar" id="live-hum-bar" style="width: 0%; background-color: var(--status-info);"></div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span>Scale: 0% – 100%</span>
+            <span id="live-hum-age">—</span>
+          </div>
+        </div>
+
+        <!-- Water Pump Relay -->
+        <div class="sensor-card">
+          <div class="sensor-card-header">
+            <div class="sensor-card-title-row">
+              <div class="sensor-icon-box pump" id="live-pump-icon">
+                <i data-lucide="power"></i>
+              </div>
+              <span class="sensor-label">Pump Relay</span>
+            </div>
+            <span class="status-pill status-neutral" id="live-pump-status">IDLE</span>
+          </div>
+
+          <div class="sensor-card-body">
+            <div class="sensor-value-group">
+              <span class="sensor-main-value" id="live-pump-val">OFF</span>
+            </div>
+          </div>
+
+          <div class="sensor-card-footer">
+            <span>Relay Control: Automatic</span>
+            <span id="live-pump-age">—</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Environmental Condition Analysis -->
+      <section class="content-card mb-4" style="margin-bottom: 24px;">
+        <div class="card-heading-row">
+          <h2 class="card-heading">
+            <i data-lucide="cpu" class="text-primary"></i>
+            <span>Real-time Environmental Condition Analysis</span>
+          </h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;" class="history-summary-grid">
+          
+          <div class="overview-stat-pill" style="padding: 16px;">
+            <span class="overview-stat-label">Hydration Condition</span>
+            <div style="font-size: 1.1rem; font-weight: 700; margin-top: 6px;" id="analysis-moisture-title">Analyzing...</div>
+            <p class="text-xs text-muted mt-1" id="analysis-moisture-desc">Continuous capacitive reading of root zone moisture.</p>
+          </div>
+
+          <div class="overview-stat-pill" style="padding: 16px;">
+            <span class="overview-stat-label">Thermal Comfort</span>
+            <div style="font-size: 1.1rem; font-weight: 700; margin-top: 6px;" id="analysis-temp-title">Analyzing...</div>
+            <p class="text-xs text-muted mt-1" id="analysis-temp-desc">Ambient temperature reading evaluated against Monstera comfort zone.</p>
+          </div>
+
+          <div class="overview-stat-pill" style="padding: 16px;">
+            <span class="overview-stat-label">Vapor Pressure &amp; Transpiration</span>
+            <div style="font-size: 1.1rem; font-weight: 700; margin-top: 6px;" id="analysis-hum-title">Analyzing...</div>
+            <p class="text-xs text-muted mt-1" id="analysis-hum-desc">Air saturation levels for optimal stomatal conductance.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Raw Database Payload Viewer -->
+      <section class="content-card">
+        <div class="card-heading-row">
+          <div>
+            <h2 class="card-heading">
+              <i data-lucide="terminal"></i>
+              <span>Raw Firebase Telemetry Packet</span>
+            </h2>
+            <p class="text-xs text-muted">Direct JSON payload received from Firebase Realtime Database <code>/plant/latest</code></p>
+          </div>
+          <button class="sp-btn sp-btn-secondary sp-btn-sm" id="copy-json-btn">
+            <i data-lucide="copy" class="icon-sm"></i> Copy JSON
+          </button>
+        </div>
+
+        <pre id="raw-json-output" style="background: #0d1612; color: #34d399; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 18px; border-radius: var(--radius-md); overflow-x: auto; max-height: 280px; border: 1px solid var(--border-subtle);">Awaiting initial packet from Firebase...</pre>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Firebase Auth Modal -->
+<div class="modal-backdrop" id="auth-modal-backdrop"></div>
+<div class="sp-modal" id="auth-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">Sign In to Firebase</h3>
+    <button class="modal-close-btn" id="auth-modal-close">&times;</button>
+  </div>
+  
+  <p class="text-xs text-muted mb-3" style="margin-bottom: 16px;">
+    Firebase Realtime Database rules require authentication (<code style="color: var(--sp-primary-700)">auth != null</code>) to read live sensor readings.
+  </p>
+
+  <div id="auth-error-alert" class="status-pill status-danger mb-3" style="display:none; width: 100%; border-radius: var(--radius-sm); margin-bottom: 14px; padding: 10px;"></div>
+
+  <form id="auth-login-form">
+    <div class="form-group">
+      <label class="form-label" for="login-email-input">Firebase User Email</label>
+      <input type="email" id="login-email-input" class="form-input" value="jayaram93915@gmail.com" required autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="login-password-input">Password</label>
+      <input type="password" id="login-password-input" class="form-input" value="Abc&1234" required autocomplete="current-password">
+    </div>
+
+    <button type="submit" class="sp-btn sp-btn-primary w-100" id="login-submit-btn" style="width: 100%; margin-top: 8px;">
+      Sign In &amp; Connect Database
+    </button>
+  </form>
+
+  <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); text-align: center;">
+    <button type="button" class="sp-btn sp-btn-secondary sp-btn-sm" id="quick-login-verified-btn" style="width: 100%;">
+      <i data-lucide="zap" class="icon-sm"></i> 1-Click Quick Connect (Pre-Configured Credentials)
+    </button>
+    <div class="text-xs text-muted mt-2" style="margin-top: 8px;">
+      Firebase Project: <code>virushka-d2b72</code>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script type="module">
+  import '../js/app.js';
+  import { subscribeToLatest, SENSOR_THRESHOLDS, formatRelativeTime } from '../js/sensor-service.js';
+
+  let currentRaw = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const unsub = subscribeToLatest((data, error) => {
+      if (error) {
+        document.getElementById('raw-json-output').textContent = 'Database error: ' + error.message;
+        return;
+      }
+      if (!data) return;
+
+      currentRaw = data;
+
+      // Update values
+      document.getElementById('live-moisture-val').textContent = data.soil_moisture != null ? data.soil_moisture : '--';
+      document.getElementById('live-temp-val').textContent = data.temperature_c != null ? Number(data.temperature_c).toFixed(1) : '--';
+      document.getElementById('live-hum-val').textContent = data.air_humidity != null ? Number(data.air_humidity).toFixed(1) : '--';
+      document.getElementById('live-pump-val').textContent = data.pump_on ? 'ON' : 'OFF';
+      document.getElementById('live-soil-raw').textContent = data.soil_raw != null ? data.soil_raw : 'N/A';
+      document.getElementById('device-uptime-val').textContent = data.uptime_ms != null ? `${(data.uptime_ms / 1000).toFixed(0)}s` : 'N/A';
+
+      // Statuses
+      const mStatus = SENSOR_THRESHOLDS.soil_moisture.getStatus(data.soil_moisture);
+      const tStatus = SENSOR_THRESHOLDS.temperature_c.getStatus(data.temperature_c);
+      const hStatus = SENSOR_THRESHOLDS.air_humidity.getStatus(data.air_humidity);
+
+      const mStatusEl = document.getElementById('live-moisture-status');
+      mStatusEl.textContent = mStatus.label;
+      mStatusEl.className = `status-pill status-${mStatus.class}`;
+
+      const tStatusEl = document.getElementById('live-temp-status');
+      tStatusEl.textContent = tStatus.label;
+      tStatusEl.className = `status-pill status-${tStatus.class}`;
+
+      const hStatusEl = document.getElementById('live-hum-status');
+      hStatusEl.textContent = hStatus.label;
+      hStatusEl.className = `status-pill status-${hStatus.class}`;
+
+      const pumpStatusEl = document.getElementById('live-pump-status');
+      pumpStatusEl.textContent = data.pump_on ? 'ACTIVE' : 'IDLE';
+      pumpStatusEl.className = `status-pill status-${data.pump_on ? 'success' : 'neutral'}`;
+
+      // Moisture SVG circle
+      if (data.soil_moisture != null) {
+        const circumference = 226.2;
+        const offset = circumference - (Math.min(100, Math.max(0, data.soil_moisture)) / 100) * circumference;
+        const circle = document.getElementById('live-moisture-circle');
+        circle.style.strokeDashoffset = offset;
+        circle.style.stroke = mStatus.color;
+      }
+
+      // Temp bar
+      if (data.temperature_c != null) {
+        const bar = document.getElementById('live-temp-bar');
+        bar.style.width = `${Math.min(100, Math.max(0, (data.temperature_c / 45) * 100))}%`;
+        bar.style.backgroundColor = tStatus.color;
+      }
+
+      // Hum bar
+      if (data.air_humidity != null) {
+        const bar = document.getElementById('live-hum-bar');
+        bar.style.width = `${Math.min(100, Math.max(0, data.air_humidity))}%`;
+        bar.style.backgroundColor = hStatus.color;
+      }
+
+      // Age labels
+      const ageStr = formatRelativeTime(data.timestamp);
+      document.getElementById('live-moisture-age').textContent = ageStr;
+      document.getElementById('live-temp-age').textContent = ageStr;
+      document.getElementById('live-hum-age').textContent = ageStr;
+      document.getElementById('live-pump-age').textContent = ageStr;
+      document.getElementById('live-time-ticker').textContent = ageStr;
+
+      // Condition analysis
+      document.getElementById('analysis-moisture-title').textContent = mStatus.label + ' Moisture';
+      document.getElementById('analysis-moisture-desc').textContent = mStatus.desc;
+      document.getElementById('analysis-temp-title').textContent = tStatus.label + ' Temperature';
+      document.getElementById('analysis-temp-desc').textContent = tStatus.desc;
+      document.getElementById('analysis-hum-title').textContent = hStatus.label + ' Humidity';
+      document.getElementById('analysis-hum-desc').textContent = hStatus.desc;
+
+      // JSON output
+      document.getElementById('raw-json-output').textContent = JSON.stringify(data, null, 2);
+    });
+
+    window.addEventListener('beforeunload', () => unsub());
+
+    document.getElementById('copy-json-btn').addEventListener('click', () => {
+      if (currentRaw) {
+        navigator.clipboard.writeText(JSON.stringify(currentRaw, null, 2)).then(() => {
+          alert('JSON packet copied to clipboard.');
+        });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

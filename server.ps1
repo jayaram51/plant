@@ -1,4 +1,4 @@
-# SmartPlant Cloud - Local HTTP Server
+# SmartPlant IoT Dashboard - Local HTTP Server
 $port = 8080
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$port/")
@@ -13,13 +13,13 @@ try {
     $listener.Start()
 }
 
-$url = "http://localhost:$port/dashboard.html"
+$url = "http://localhost:$port/index.html"
 
 Write-Host "========================================================" -ForegroundColor Green
-Write-Host "  SmartPlant Cloud - IoT Dashboard and PWA" -ForegroundColor Green
+Write-Host "  SmartPlant IoT Monitoring — Local Static Server" -ForegroundColor Green
 Write-Host "  Server running at: $url" -ForegroundColor Cyan
 Write-Host "  Opening browser..." -ForegroundColor Yellow
-Write-Host "  Keep this window open. Press Ctrl+C to stop server." -ForegroundColor Gray
+Write-Host "  Press Ctrl+C to stop server." -ForegroundColor Gray
 Write-Host "========================================================" -ForegroundColor Green
 
 Start-Process $url
@@ -50,7 +50,7 @@ while ($listener.IsListening) {
         $response = $context.Response
 
         $path = $request.Url.LocalPath.TrimStart('/')
-        if ([string]::IsNullOrEmpty($path)) { $path = 'dashboard.html' }
+        if ([string]::IsNullOrEmpty($path)) { $path = 'index.html' }
 
         $filePath = Join-Path $root $path
         $fullPath = [System.IO.Path]::GetFullPath($filePath)
@@ -82,6 +82,6 @@ while ($listener.IsListening) {
         }
         $response.Close()
     } catch {
-        # Ignore client aborts
+        # Ignore client disconnects
     }
 }
