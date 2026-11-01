@@ -56,6 +56,7 @@ self.addEventListener('fetch', (event) => {
   // Never intercept Firebase Realtime Database WebSockets or Auth API requests
   const url = event.request.url;
   if (
+    !url.startsWith('http') ||
     url.includes('firebase') || 
     url.includes('firebaseio.com') || 
     url.includes('gstatic.com') || 

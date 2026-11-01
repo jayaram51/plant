@@ -53,8 +53,10 @@ function getChartThemeOptions() {
         scales: {
             x: {
                 grid: {
-                    color: gridColor,
-                    drawBorder: false
+                    color: gridColor
+                },
+                border: {
+                    display: false
                 },
                 ticks: {
                     color: textColor,
@@ -66,8 +68,10 @@ function getChartThemeOptions() {
             },
             y: {
                 grid: {
-                    color: gridColor,
-                    drawBorder: false
+                    color: gridColor
+                },
+                border: {
+                    display: false
                 },
                 ticks: {
                     color: textColor,
@@ -101,6 +105,11 @@ function formatLabelForRange(timestamp, range) {
 export function renderMoistureChart(canvasId, records, range = _activeRange) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
+
+    if (records && records.length) {
+        _cachedHistory = records;
+    }
+    _activeRange = range;
 
     const filtered = filterHistoryByRange(records, range);
     const labels = filtered.map(r => formatLabelForRange(r.timestamp, range));
@@ -154,6 +163,11 @@ export function renderTemperatureChart(canvasId, records, range = _activeRange) 
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
 
+    if (records && records.length) {
+        _cachedHistory = records;
+    }
+    _activeRange = range;
+
     const filtered = filterHistoryByRange(records, range);
     const labels = filtered.map(r => formatLabelForRange(r.timestamp, range));
     const dataPoints = filtered.map(r => r.temperature_c);
@@ -203,6 +217,11 @@ export function renderTemperatureChart(canvasId, records, range = _activeRange) 
 export function renderHumidityChart(canvasId, records, range = _activeRange) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
+
+    if (records && records.length) {
+        _cachedHistory = records;
+    }
+    _activeRange = range;
 
     const filtered = filterHistoryByRange(records, range);
     const labels = filtered.map(r => formatLabelForRange(r.timestamp, range));
@@ -256,10 +275,16 @@ export function renderCombinedChart(canvasId, records, range = _activeRange) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
 
+    if (records && records.length) {
+        _cachedHistory = records;
+    }
+    _activeRange = range;
+
     const filtered = filterHistoryByRange(records, range);
     const labels = filtered.map(r => formatLabelForRange(r.timestamp, range));
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const isMobile = window.innerWidth <= 640;
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
     const textColor = isDark ? '#94a3b8' : '#64748b';
 
@@ -274,9 +299,9 @@ export function renderCombinedChart(canvasId, records, range = _activeRange) {
                 position: 'top',
                 labels: {
                     color: textColor,
-                    boxWidth: 12,
+                    boxWidth: 10,
                     usePointStyle: true,
-                    font: { size: 12, family: 'Inter, system-ui, sans-serif' }
+                    font: { size: isMobile ? 10 : 12, family: 'Inter, system-ui, sans-serif' }
                 }
             },
             tooltip: {
@@ -290,32 +315,35 @@ export function renderCombinedChart(canvasId, records, range = _activeRange) {
         },
         scales: {
             x: {
-                grid: { color: gridColor, drawBorder: false },
-                ticks: { color: textColor, maxTicksLimit: 8, font: { size: 11 } }
+                grid: { color: gridColor },
+                border: { display: false },
+                ticks: { color: textColor, maxTicksLimit: isMobile ? 5 : 8, font: { size: 10 } }
             },
             y: {
                 type: 'linear',
                 position: 'left',
                 min: 0,
                 max: 100,
-                grid: { color: gridColor, drawBorder: false },
+                grid: { color: gridColor },
+                border: { display: false },
                 ticks: {
                     color: textColor,
                     callback: v => `${v}%`,
-                    font: { size: 11 }
+                    font: { size: 10 }
                 },
-                title: { display: true, text: 'Moisture & Humidity (%)', color: textColor, font: { size: 11 } }
+                title: { display: !isMobile, text: 'Moisture & Humidity (%)', color: textColor, font: { size: 11 } }
             },
             y1: {
                 type: 'linear',
                 position: 'right',
                 grid: { drawOnChartArea: false },
+                border: { display: false },
                 ticks: {
                     color: textColor,
                     callback: v => `${v}°C`,
-                    font: { size: 11 }
+                    font: { size: 10 }
                 },
-                title: { display: true, text: 'Temperature (°C)', color: textColor, font: { size: 11 } }
+                title: { display: !isMobile, text: 'Temperature (°C)', color: textColor, font: { size: 11 } }
             }
         }
     };

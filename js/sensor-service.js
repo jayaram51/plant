@@ -4,6 +4,7 @@
 // ================================================================
 
 import { db, DB_PATHS, ref, onValue, off, get, query, limitToLast } from './firebase-config.js';
+import { onAuthChange } from './firebase-service.js';
 
 // Active listeners and caches
 let _latestData = null;
@@ -97,19 +98,11 @@ export function sanitizeRecord(raw, key = null) {
     };
 }
 
-/**
- * Subscribes to real-time updates from /plant/latest
- */
-export function subscribeToLatest(callback) {
-    _latestListeners.push(callback);
-    // Immediately emit cached if exists
-    if (_latestData) {
-        callback(_latestData);
-    }
-
-    if (!_latestRefUnsubscribe) {
+function startLatestSubscription() {
+    if (_latestRefUnsubscribe) return;
+    try {
         const latestRef = ref(db, DB_PATHS.LATEST);
-        const unsubscribe = onValue(latestRef, (snapshot) => {
+        _latestRefUnsubscribe = onValue(latestRef, (snapshot) => {
             const val = snapshot.val();
             _latestData = sanitizeRecord(val);
             _latestListeners.forEach(cb => {
@@ -117,36 +110,22 @@ export function subscribeToLatest(callback) {
             });
         }, (err) => {
             console.error('Firebase error on /plant/latest:', err);
+            _latestRefUnsubscribe = null;
             _latestListeners.forEach(cb => {
                 try { cb(null, err); } catch (e) { console.error(e); }
             });
         });
-
-        _latestRefUnsubscribe = () => off(latestRef);
+    } catch (e) {
+        console.error('Failed to start latest subscription:', e);
+        _latestRefUnsubscribe = null;
     }
-
-    return () => {
-        const idx = _latestListeners.indexOf(callback);
-        if (idx > -1) _latestListeners.splice(idx, 1);
-        if (_latestListeners.length === 0 && _latestRefUnsubscribe) {
-            _latestRefUnsubscribe();
-            _latestRefUnsubscribe = null;
-        }
-    };
 }
 
-/**
- * Subscribes to /plant/history records
- */
-export function subscribeToHistory(callback) {
-    _historyListeners.push(callback);
-    if (_historyData.length > 0) {
-        callback(_historyData);
-    }
-
-    if (!_historyRefUnsubscribe) {
+function startHistorySubscription() {
+    if (_historyRefUnsubscribe) return;
+    try {
         const historyRef = ref(db, DB_PATHS.HISTORY);
-        const unsubscribe = onValue(historyRef, (snapshot) => {
+        _historyRefUnsubscribe = onValue(historyRef, (snapshot) => {
             const val = snapshot.val();
             const list = [];
             if (val && typeof val === 'object') {
@@ -163,19 +142,75 @@ export function subscribeToHistory(callback) {
             });
         }, (err) => {
             console.error('Firebase error on /plant/history:', err);
+            _historyRefUnsubscribe = null;
             _historyListeners.forEach(cb => {
                 try { cb([], err); } catch (e) { console.error(e); }
             });
         });
-
-        _historyRefUnsubscribe = () => off(historyRef);
+    } catch (e) {
+        console.error('Failed to start history subscription:', e);
+        _historyRefUnsubscribe = null;
     }
+}
+
+// Automatically re-establish subscriptions when authentication state changes
+onAuthChange((user) => {
+    if (user) {
+        if (_latestListeners.length > 0) {
+            if (_latestRefUnsubscribe) {
+                try { _latestRefUnsubscribe(); } catch (e) {}
+                _latestRefUnsubscribe = null;
+            }
+            startLatestSubscription();
+        }
+        if (_historyListeners.length > 0) {
+            if (_historyRefUnsubscribe) {
+                try { _historyRefUnsubscribe(); } catch (e) {}
+                _historyRefUnsubscribe = null;
+            }
+            startHistorySubscription();
+        }
+    }
+});
+
+/**
+ * Subscribes to real-time updates from /plant/latest
+ */
+export function subscribeToLatest(callback) {
+    _latestListeners.push(callback);
+    // Immediately emit cached if exists
+    if (_latestData) {
+        callback(_latestData);
+    }
+
+    startLatestSubscription();
+
+    return () => {
+        const idx = _latestListeners.indexOf(callback);
+        if (idx > -1) _latestListeners.splice(idx, 1);
+        if (_latestListeners.length === 0 && _latestRefUnsubscribe) {
+            try { _latestRefUnsubscribe(); } catch (e) {}
+            _latestRefUnsubscribe = null;
+        }
+    };
+}
+
+/**
+ * Subscribes to /plant/history records
+ */
+export function subscribeToHistory(callback) {
+    _historyListeners.push(callback);
+    if (_historyData.length > 0) {
+        callback(_historyData);
+    }
+
+    startHistorySubscription();
 
     return () => {
         const idx = _historyListeners.indexOf(callback);
         if (idx > -1) _historyListeners.splice(idx, 1);
         if (_historyListeners.length === 0 && _historyRefUnsubscribe) {
-            _historyRefUnsubscribe();
+            try { _historyRefUnsubscribe(); } catch (e) {}
             _historyRefUnsubscribe = null;
         }
     };

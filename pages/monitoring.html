@@ -274,7 +274,7 @@
           </h2>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;" class="history-summary-grid">
+        <div class="history-summary-grid">
           
           <div class="overview-stat-pill" style="padding: 16px;">
             <span class="overview-stat-label">Hydration Condition</span>
@@ -368,7 +368,10 @@
   document.addEventListener('DOMContentLoaded', () => {
     const unsub = subscribeToLatest((data, error) => {
       if (error) {
-        document.getElementById('raw-json-output').textContent = 'Database error: ' + error.message;
+        const isPermissionError = error?.code === 'PERMISSION_DENIED' || error?.message?.toLowerCase().includes('permission');
+        document.getElementById('raw-json-output').textContent = isPermissionError
+          ? '🔒 Authentication Required: Firebase database rules enforce authenticated access (auth != null). Please click "Sign In" in the top bar to connect.'
+          : 'Database error: ' + error.message;
         return;
       }
       if (!data) return;
@@ -403,6 +406,11 @@
       const pumpStatusEl = document.getElementById('live-pump-status');
       pumpStatusEl.textContent = data.pump_on ? 'ACTIVE' : 'IDLE';
       pumpStatusEl.className = `status-pill status-${data.pump_on ? 'success' : 'neutral'}`;
+
+      const pumpIconEl = document.getElementById('live-pump-icon');
+      if (pumpIconEl) {
+        pumpIconEl.classList.toggle('pump-active-pulse', !!data.pump_on);
+      }
 
       // Moisture SVG circle
       if (data.soil_moisture != null) {
@@ -453,7 +461,11 @@
       if (currentRaw) {
         navigator.clipboard.writeText(JSON.stringify(currentRaw, null, 2)).then(() => {
           alert('JSON packet copied to clipboard.');
+        }).catch(() => {
+          alert('Failed to copy to clipboard.');
         });
+      } else {
+        alert('No telemetry data available yet to copy.');
       }
     });
   });

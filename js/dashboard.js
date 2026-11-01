@@ -342,8 +342,36 @@ function updateRecentActivityTable(recentRecords) {
 function handleSensorError(error) {
     console.warn('Dashboard sensor error:', error);
     const chip = document.getElementById('firebase-status-chip');
+    const isPermissionError = error?.code === 'PERMISSION_DENIED' || error?.message?.toLowerCase().includes('permission');
+
     if (chip) {
-        chip.className = 'status-pill status-danger';
-        chip.innerHTML = '<span class="status-dot"></span><span>Error Connecting</span>';
+        if (isPermissionError) {
+            chip.className = 'status-pill status-warning connection-chip';
+            chip.innerHTML = '<span class="status-dot"></span><span>Sign In Required</span>';
+        } else {
+            chip.className = 'status-pill status-danger connection-chip';
+            chip.innerHTML = '<span class="status-dot"></span><span>Connection Offline</span>';
+        }
+    }
+
+    if (isPermissionError) {
+        const tbody = document.getElementById('recent-readings-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">🔒 Firebase Realtime Database requires authentication. Click <strong>Sign In</strong> in the topbar to connect.</td></tr>`;
+        }
+
+        const feed = document.getElementById('alerts-feed-container');
+        if (feed) {
+            feed.innerHTML = `
+                <div class="empty-feed-card">
+                    <i data-lucide="shield-alert" class="empty-icon text-warning"></i>
+                    <div class="empty-text">
+                        <strong>Authentication Required</strong>
+                        <span>Database security rules require an authenticated session. Click <strong>Sign In</strong> (top-right) to connect.</span>
+                    </div>
+                </div>
+            `;
+            if (window.lucide) window.lucide.createIcons();
+        }
     }
 }

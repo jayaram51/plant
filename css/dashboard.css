@@ -540,3 +540,65 @@
 .status-bg-danger  { background: var(--status-danger-bg);  color: #dc2626; }
 .status-bg-info    { background: var(--status-info-bg);    color: #1d4ed8; }
 .status-bg-neutral { background: var(--status-neutral-bg); color: #475569; }
+
+/* ================================================================
+   History Page Layout & Controls
+   ================================================================ */
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.history-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.history-actions-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-search-box {
+  position: relative;
+  width: 280px;
+}
+
+.history-search-box input {
+  padding-left: 36px;
+}
+
+.history-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 8px;
+}

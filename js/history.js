@@ -31,6 +31,17 @@ export function initHistoryPage() {
     subscribeToHistory((records, error) => {
         if (error) {
             console.error('History subscribe error:', error);
+            const isPermissionError = error?.code === 'PERMISSION_DENIED' || error?.message?.toLowerCase().includes('permission');
+            const tbody = document.getElementById('history-table-tbody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">
+                    ${isPermissionError ? '🔒 Authentication required to access historical records. Click <strong>Sign In</strong> above to authenticate.' : 'Failed to load records from Firebase: ' + (error.message || 'Error')}
+                </td></tr>`;
+            }
+            const countEl = document.getElementById('total-records-count');
+            if (countEl) {
+                countEl.textContent = isPermissionError ? 'Authentication required' : 'Error loading records';
+            }
             return;
         }
         _allRecords = records;

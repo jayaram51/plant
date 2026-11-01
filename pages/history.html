@@ -31,51 +31,6 @@
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/responsive.css">
-
-  <style>
-    .history-summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-bottom: 24px;
-    }
-    .history-actions-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-    .history-search-box {
-      position: relative;
-      width: 280px;
-    }
-    .history-search-box input {
-      padding-left: 36px;
-    }
-    .history-search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      width: 16px;
-      height: 16px;
-      pointer-events: none;
-    }
-    .pagination-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 18px;
-      margin-top: 12px;
-      border-top: 1px solid var(--border-subtle);
-    }
-    .pagination-buttons {
-      display: flex;
-      gap: 8px;
-    }
-  </style>
 </head>
 <body>
 
@@ -300,7 +255,7 @@
             <span class="text-xs text-muted" id="total-records-count">Loading history from Firebase...</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="history-actions-controls">
             <div class="history-search-box">
               <i data-lucide="search" class="history-search-icon"></i>
               <input type="text" class="form-input" id="history-search-input" placeholder="Search by date, time, value...">
