@@ -1,0 +1,55 @@
+{
+  "name": "SmartPlant IoT — Smart Plant Monitoring",
+  "short_name": "SmartPlant",
+  "description": "Professional Smart IoT Plant Monitoring Web App powered by Firebase Realtime Database",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f8f5",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Telemetry Dashboard",
+      "short_name": "Dashboard",
+      "description": "View live sensors & health diagnosis",
+      "url": "./index.html",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Monitoring",
+      "short_name": "Live",
+      "description": "Real-time telemetry streaming",
+      "url": "./pages/monitoring.html",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Plant History",
+      "short_name": "History",
+      "description": "Interactive graphs & data table",
+      "url": "./pages/history.html",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Plant Information",
+      "short_name": "Care Guide",
+      "description": "Botanical tolerances & care guide",
+      "url": "./pages/plant-info.html",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

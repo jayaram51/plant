@@ -7,6 +7,15 @@
   <meta name="description" content="Professional Smart Plant Monitoring Dashboard powered by Firebase Realtime Database. Monitor soil moisture, temperature, humidity, and plant health telemetry in real-time.">
   <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 
+  <!-- Progressive Web App Meta Tags & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#059669">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SmartPlant">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,6 +113,12 @@
           <i data-lucide="clock" class="icon-sm"></i>
           <span id="last-sync-relative">Awaiting data</span>
         </div>
+
+        <!-- PWA Install Web App Button -->
+        <button class="sp-btn sp-btn-primary sp-btn-sm pwa-install-btn" style="display: none;" title="Install Progressive Web App">
+          <i data-lucide="download" class="icon-sm"></i>
+          <span class="d-none d-sm-inline">Install App</span>
+        </button>
 
         <!-- Theme Toggle -->
         <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle theme">

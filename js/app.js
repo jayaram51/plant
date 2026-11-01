@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileNav();
     initFirebaseConnectionWatcher();
     initAuthUI();
+    initPWA();
     initIcons();
 });
 
@@ -20,6 +21,51 @@ export function initIcons() {
         window.lucide.createIcons();
     }
 }
+
+/**
+ * PWA Service Worker Registration & Installation Prompt
+ */
+let _deferredInstallPrompt = null;
+
+function initPWA() {
+    // 1. Register Service Worker
+    if ('serviceWorker' in navigator) {
+        const swPath = window.location.pathname.includes('/pages/') ? '../sw.js' : './sw.js';
+        navigator.serviceWorker.register(swPath).then((reg) => {
+            console.log('SmartPlant PWA Service Worker registered:', reg.scope);
+        }).catch((err) => {
+            console.warn('Service Worker registration skipped:', err);
+        });
+    }
+
+    // 2. Handle PWA Install Prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        _deferredInstallPrompt = e;
+        const installBtns = document.querySelectorAll('.pwa-install-btn');
+        installBtns.forEach(btn => {
+            btn.style.display = 'inline-flex';
+            btn.onclick = async () => {
+                if (_deferredInstallPrompt) {
+                    _deferredInstallPrompt.prompt();
+                    const { outcome } = await _deferredInstallPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        showToast('SmartPlant Web App installed successfully!', 'success');
+                    }
+                    _deferredInstallPrompt = null;
+                    installBtns.forEach(b => b.style.display = 'none');
+                }
+            };
+        });
+    });
+
+    window.addEventListener('appinstalled', () => {
+        showToast('SmartPlant Web App installed on your device!', 'success');
+        _deferredInstallPrompt = null;
+        document.querySelectorAll('.pwa-install-btn').forEach(b => b.style.display = 'none');
+    });
+}
+
 
 /**
  * Theme Management
